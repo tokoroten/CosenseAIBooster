@@ -52,12 +52,12 @@ export class StorageService {
     };
 
     const settings = await this.getSettings();
-    
+
     if (!settings) {
       await this.saveSettings(defaultSettings);
       return defaultSettings;
     }
-    
+
     return settings;
   }
 
@@ -106,8 +106,8 @@ export class StorageService {
       model: prompt.model,
     };
 
-    const existingPromptIndex = prompts.findIndex(p => p.id === prompt.id);
-    
+    const existingPromptIndex = prompts.findIndex((p) => p.id === prompt.id);
+
     if (existingPromptIndex >= 0) {
       prompts[existingPromptIndex] = newPrompt;
     } else {
@@ -130,11 +130,11 @@ export class StorageService {
     if (!settings) throw new Error('Settings not found');
 
     const prompts = settings.prompts || [];
-    const promptIndex = prompts.findIndex(p => p.id === id);
-    
+    const promptIndex = prompts.findIndex((p) => p.id === id);
+
     if (promptIndex >= 0) {
       prompts.splice(promptIndex, 1);
-      
+
       await this.saveSettings({
         ...settings,
         prompts,
@@ -146,6 +146,8 @@ export class StorageService {
    * ランダムIDの生成
    */
   private static generateId(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return (
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
   }
 }

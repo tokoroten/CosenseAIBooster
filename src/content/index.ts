@@ -9,8 +9,7 @@ import { StorageService } from '../utils/storage';
 let speechRecognition: SpeechRecognitionService | null = null;
 let isSpeechListening = false;
 let micIcon: HTMLElement | null = null;
-let settingsIcon: HTMLElement | null = null;
-let processingPromptIds: Set<string> = new Set();
+const processingPromptIds: Set<string> = new Set();
 
 // アイコンSVG
 const MIC_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -86,7 +85,7 @@ const STYLE = `
 // 初期化
 (function init() {
   if (!CosenseDOMUtils.isCosensePage()) return;
-  
+
   // DOMが読み込まれたら初期化処理
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
@@ -101,13 +100,13 @@ const STYLE = `
 function onDOMContentLoaded(): void {
   // スタイルの追加
   addStyles();
-  
+
   // UIの初期化
   initializeUI();
-  
+
   // 音声認識の初期化
   initializeSpeechRecognition();
-  
+
   // メッセージリスナーの設定
   setupMessageListeners();
 }
@@ -131,9 +130,8 @@ function initializeUI(): void {
     'cosense-ai-icon cosense-ai-mic',
     toggleSpeechRecognition
   );
-  
   // 設定アイコンとスタイル追加
-  settingsIcon = CosenseDOMUtils.addIconToSidebar(
+  CosenseDOMUtils.addIconToSidebar(
     SETTINGS_SVG,
     'cosense-ai-icon cosense-ai-settings',
     openSettings
@@ -146,41 +144,90 @@ function initializeUI(): void {
 function initializeSpeechRecognition(): void {
   try {
     // 設定を読み込む
-    StorageService.getSettings().then(settings => {
+    StorageService.getSettings().then((settings) => {
       if (!settings) return;
-      
+
       speechRecognition = new SpeechRecognitionService({
         language: settings.speechLang,
         continuous: true,
-        interimResults: true
+        interimResults: true,
       });
-      
+
       // 結果ハンドラ
       speechRecognition.onResult((final, interim, isFinal) => {
-        if (!isFinal) return;
-        
+        // 中間結果の場合はステータス表示を更新
+        if (!isFinal) {
+          if (interim) {
+            const statusElement = document.querySelector('.cosense-ai-status');
+            if (statusElement) {
+              const messageDiv = statusElement.querySelector('div:last-child');
+              if (messageDiv) {
+                messageDiv.textContent = `音声認識中: ${interim}`;
+              }
+            }
+          }
+          return;
+        }
+
         // 確定した音声テキストをページに挿入
         const text = final.trim();
         if (text) {
-          CosenseDOMUtils.insertText(text, 'bottom');
+          // 設定で指定された挿入位置に挿入
+          StorageService.getSettings().then((settings) => {
+            const insertPosition = settings?.insertPosition || 'bottom';
+            CosenseDOMUtils.insertText(text, insertPosition).then((success) => {
+              if (!success) {
+                showStatus('テキスト挿入に失敗しました', 'error');
+              }
+            });
+          });
         }
       });
-      
+
       // 終了ハンドラ
       speechRecognition.onEnd(() => {
-        isSpeechListening = false;
-        updateMicIcon();
+        if (isSpeechListening) {
+          // 自動的に終了した場合（一時停止検出など）
+          const status = speechRecognition?.getStatus();
+
+          if (status?.isPaused) {
+            // 一時停止の場合
+            showStatus('一時停止中（話すと再開します）', 'normal');
+
+            // 10秒後に何も話さなければ完全に停止
+            setTimeout(() => {
+              const currentStatus = speechRecognition?.getStatus();
+              if (currentStatus?.isPaused) {
+                speechRecognition?.stop();
+                isSpeechListening = false;
+                updateMicIcon();
+                showStatus('音声認識を停止しました');
+              }
+            }, 10000);
+          } else {
+            isSpeechListening = false;
+            updateMicIcon();
+          }
+        }
       });
-      
+
       // エラーハンドラ
-      speechRecognition.onError(() => {
+      speechRecognition.onError((event) => {
         isSpeechListening = false;
         updateMicIcon();
-        showStatus('音声認識エラー', 'error');
+
+        // エラーの種類によって異なるメッセージを表示
+        let errorMessage = '音声認識エラー';
+        if (event?.error === 'not-allowed') {
+          errorMessage = 'マイクの使用が許可されていません';
+        } else if (event?.error === 'no-speech') {
+          errorMessage = '音声が検出されませんでした';
+        }
+
+        showStatus(errorMessage, 'error');
       });
     });
   } catch (error) {
-    console.error('Failed to initialize speech recognition:', error);
     showStatus('音声認識機能が利用できません', 'error');
   }
 }
@@ -193,25 +240,36 @@ function toggleSpeechRecognition(): void {
     showStatus('音声認識機能が利用できません', 'error');
     return;
   }
-  
+
+  const status = speechRecognition.getStatus();
+
   if (isSpeechListening) {
-    // 停止
-    speechRecognition.stop();
-    isSpeechListening = false;
-    showStatus('音声認識を停止しました');
+    if (status.isPaused) {
+      // 一時停止中の場合は再開
+      try {
+        speechRecognition.resume();
+        showStatus('音声認識を再開しました', 'listening');
+      } catch (error) {
+        showStatus('音声認識を再開できませんでした', 'error');
+      }
+    } else {
+      // 動作中の場合は停止
+      speechRecognition.stop();
+      isSpeechListening = false;
+      showStatus('音声認識を停止しました');
+    }
   } else {
-    // 開始
+    // 停止中の場合は開始
     try {
       speechRecognition.start();
       isSpeechListening = true;
       showStatus('音声認識中...', 'listening');
     } catch (error) {
-      console.error('Failed to start speech recognition:', error);
       isSpeechListening = false;
       showStatus('音声認識を開始できませんでした', 'error');
     }
   }
-  
+
   updateMicIcon();
 }
 
@@ -220,7 +278,7 @@ function toggleSpeechRecognition(): void {
  */
 function updateMicIcon(): void {
   if (!micIcon) return;
-  
+
   if (isSpeechListening) {
     micIcon.innerHTML = MIC_ACTIVE_SVG;
     micIcon.classList.add('active');
@@ -240,19 +298,22 @@ function openSettings(): void {
 /**
  * ステータス表示
  */
-function showStatus(message: string, type: 'normal' | 'error' | 'listening' | 'loading' = 'normal'): void {
+function showStatus(
+  message: string,
+  type: 'normal' | 'error' | 'listening' | 'loading' = 'normal'
+): HTMLElement {
   // 既存のステータス要素を削除
   const existingStatus = document.querySelector('.cosense-ai-status');
   if (existingStatus) {
     existingStatus.remove();
   }
-  
+
   // 新しいステータス要素を作成
   const statusElement = document.createElement('div');
   statusElement.className = 'cosense-ai-status';
-  
+
   let icon = '';
-  
+
   switch (type) {
     case 'error':
       icon = `<div class="status-icon error"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></div>`;
@@ -266,10 +327,10 @@ function showStatus(message: string, type: 'normal' | 'error' | 'listening' | 'l
     default:
       icon = `<div class="status-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2196f3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>`;
   }
-  
+
   statusElement.innerHTML = `${icon}<div>${message}</div>`;
   document.body.appendChild(statusElement);
-  
+
   // 3秒後に消す（エラーとロード中は除く）
   if (type !== 'error' && type !== 'loading') {
     setTimeout(() => {
@@ -277,7 +338,7 @@ function showStatus(message: string, type: 'normal' | 'error' | 'listening' | 'l
       setTimeout(() => statusElement.remove(), 300);
     }, 3000);
   }
-  
+
   return statusElement;
 }
 
@@ -286,7 +347,11 @@ function showStatus(message: string, type: 'normal' | 'error' | 'listening' | 'l
  */
 function showProcessingStatus(promptId: string): HTMLElement {
   processingPromptIds.add(promptId);
-  return showStatus('AIによる処理中...', 'loading');
+  const statusElement = showStatus('AIによる処理中...', 'loading');
+  if (!(statusElement instanceof HTMLElement)) {
+    return document.createElement('div'); // fallback
+  }
+  return statusElement;
 }
 
 /**
@@ -294,18 +359,18 @@ function showProcessingStatus(promptId: string): HTMLElement {
  */
 function hideProcessingStatus(promptId: string, success: boolean = true): void {
   processingPromptIds.delete(promptId);
-  
+
   // すでにステータス表示がなければ何もしない
   const statusElement = document.querySelector('.cosense-ai-status');
   if (!statusElement) return;
-  
+
   // 他のプロンプトがまだ処理中なら表示を維持
   if (processingPromptIds.size > 0) return;
-  
+
   // ステータス表示を消す
   statusElement.classList.add('hidden');
   setTimeout(() => statusElement.remove(), 300);
-  
+
   // 成功メッセージを一瞬表示
   if (success) {
     showStatus('処理が完了しました');
@@ -321,16 +386,16 @@ function setupMessageListeners(): void {
       case 'startProcessingPrompt':
         handleStartProcessingPrompt(message.data);
         break;
-        
+
       case 'insertProcessedText':
         handleInsertProcessedText(message.data);
         break;
-        
+
       case 'showError':
         handleShowError(message.data);
         break;
     }
-    
+
     sendResponse({ success: true });
     return false;
   });
@@ -347,9 +412,13 @@ function handleStartProcessingPrompt(data: { promptId: string }): void {
 /**
  * 処理結果挿入の処理
  */
-function handleInsertProcessedText(data: { text: string; promptId: string; insertPosition: 'below' | 'bottom' }): void {
+function handleInsertProcessedText(data: {
+  text: string;
+  promptId: string;
+  insertPosition: 'below' | 'bottom';
+}): void {
   const { text, promptId, insertPosition } = data;
-  
+
   // テキストを挿入
   CosenseDOMUtils.insertText(text, insertPosition)
     .then(() => {

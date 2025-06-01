@@ -33,21 +33,21 @@ interface OpenAIResponse {
 export class OpenAIClient {
   private apiKey: string;
   private baseURL: string;
-  
+
   constructor(apiKey: string, baseURL = 'https://api.openai.com/v1') {
     this.apiKey = apiKey;
     this.baseURL = baseURL;
   }
-  
+
   async createChatCompletion(options: OpenAIRequestOptions): Promise<string> {
     try {
       const config: AxiosRequestConfig = {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        }
+          Authorization: `Bearer ${this.apiKey}`,
+        },
       };
-      
+
       const response = await axios.post<OpenAIResponse>(
         `${this.baseURL}/chat/completions`,
         {
@@ -58,7 +58,7 @@ export class OpenAIClient {
         },
         config
       );
-      
+
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error('OpenAI API Error:', error);

@@ -31,23 +31,23 @@ interface OpenRouterResponse {
 export class OpenRouterClient {
   private apiKey: string;
   private baseURL: string;
-  
+
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     this.baseURL = 'https://openrouter.ai/api/v1';
   }
-  
+
   async createChatCompletion(options: OpenRouterRequestOptions): Promise<string> {
     try {
       const config: AxiosRequestConfig = {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'HTTP-Referer': 'https://github.com/your-username/cosense-ai-booster', // 適切なリファラーに変更してください
-          'X-Title': 'Cosense AI Booster'
-        }
+          'X-Title': 'Cosense AI Booster',
+        },
       };
-      
+
       const response = await axios.post<OpenRouterResponse>(
         `${this.baseURL}/chat/completions`,
         {
@@ -58,7 +58,7 @@ export class OpenRouterClient {
         },
         config
       );
-      
+
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error('OpenRouter API Error:', error);

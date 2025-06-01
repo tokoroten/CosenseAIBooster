@@ -27,7 +27,7 @@ function checkCurrentTab(): void {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const currentTab = tabs[0];
     const statusMessage = document.getElementById('status-message');
-    
+
     if (statusMessage) {
       if (currentTab.url && currentTab.url.includes('scrapbox.io')) {
         statusMessage.textContent = 'Cosenseページで動作中';

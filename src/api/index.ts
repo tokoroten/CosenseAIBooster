@@ -17,32 +17,46 @@ export interface CompletionRequest {
 }
 
 export class APIClientFactory {
-  static async getCompletion(options: APIClientOptions, request: CompletionRequest): Promise<string> {
+  static async getCompletion(
+    options: APIClientOptions,
+    request: CompletionRequest
+  ): Promise<string> {
     try {
       const messages = [
         {
           role: 'system' as const,
-          content: 'You are a helpful assistant.'
+          content: 'You are a helpful assistant.',
         },
         {
           role: 'user' as const,
-          content: request.prompt.replace('{{text}}', request.selectedText)
-        }
+          content: request.prompt.replace('{{text}}', request.selectedText),
+        },
       ];
-      
+
       switch (options.provider) {
         case 'openai':
           return await this.getOpenAICompletion(options.apiKey, options.model, messages, request);
-          
+
         case 'openrouter':
-          return await this.getOpenRouterCompletion(options.apiKey, options.model, messages, request);
-          
+          return await this.getOpenRouterCompletion(
+            options.apiKey,
+            options.model,
+            messages,
+            request
+          );
+
         case 'custom':
           if (!options.customEndpoint) {
             throw new Error('Custom endpoint URL is required');
           }
-          return await this.getCustomCompletion(options.customEndpoint, options.apiKey, options.model, messages, request);
-          
+          return await this.getCustomCompletion(
+            options.customEndpoint,
+            options.apiKey,
+            options.model,
+            messages,
+            request
+          );
+
         default:
           throw new Error('Unknown API provider');
       }
@@ -51,7 +65,7 @@ export class APIClientFactory {
       throw error;
     }
   }
-  
+
   private static async getOpenAICompletion(
     apiKey: string,
     model: string,
@@ -63,10 +77,10 @@ export class APIClientFactory {
       model,
       messages,
       temperature: request.temperature,
-      max_tokens: request.maxTokens
+      max_tokens: request.maxTokens,
     });
   }
-  
+
   private static async getOpenRouterCompletion(
     apiKey: string,
     model: string,
@@ -78,10 +92,10 @@ export class APIClientFactory {
       model,
       messages,
       temperature: request.temperature,
-      max_tokens: request.maxTokens
+      max_tokens: request.maxTokens,
     });
   }
-  
+
   private static async getCustomCompletion(
     endpoint: string,
     apiKey: string,
@@ -94,7 +108,7 @@ export class APIClientFactory {
       model,
       messages,
       temperature: request.temperature,
-      max_tokens: request.maxTokens
+      max_tokens: request.maxTokens,
     });
   }
 }
