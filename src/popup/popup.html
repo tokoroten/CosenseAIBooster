@@ -4,106 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cosense AI Booster</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      width: 300px;
-      color: #333;
-    }
-    
-    .container {
-      padding: 16px;
-    }
-    
-    header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #eee;
-    }
-    
-    h1 {
-      font-size: 16px;
-      margin: 0;
-      flex: 1;
-    }
-    
-    .logo {
-      width: 24px;
-      height: 24px;
-      margin-right: 8px;
-    }
-    
-    .button {
-      display: block;
-      width: 100%;
-      padding: 8px 12px;
-      background: #4285F4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 8px;
-      text-align: center;
-      text-decoration: none;
-      font-size: 14px;
-    }
-    
-    .button:hover {
-      background: #3367D6;
-    }
-    
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #666;
-    }
-    
-    .settings-btn {
-      background: #f1f1f1;
-      color: #333;
-    }
-    
-    .settings-btn:hover {
-      background: #e4e4e4;
-    }
-    
-    .feature-list {
-      margin-top: 12px;
-      padding-left: 20px;
-      font-size: 13px;
-    }
-    
-    .feature-list li {
-      margin-bottom: 4px;
-    }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <img src="assets/icon-48.png" alt="Cosense AI Booster" class="logo">
-      <h1>Cosense AI Booster</h1>
+<body class="font-sans text-gray-800 w-[300px] m-0 p-0">
+  <div class="p-4">
+    <header class="flex items-center pb-2 mb-3 border-b border-gray-200">
+      <img src="assets/icon-48.png" alt="Cosense AI Booster" class="w-6 h-6 mr-2">
+      <h1 class="text-lg font-medium flex-1 m-0">Cosense AI Booster</h1>
     </header>
     
-    <div id="status-message" class="status">
+    <div id="status-message" class="text-sm text-gray-500 mb-3">
       Cosenseページで有効になります
     </div>
     
-    <div class="feature-list">
-      <ul>
-        <li>選択したテキストにAIプロンプトを適用</li>
-        <li>音声入力機能</li>
-        <li>カスタムプロンプトの設定</li>
+    <div class="mt-2">
+      <ul class="pl-5 text-sm">
+        <li class="mb-1">選択したテキストにAIプロンプトを適用</li>
+        <li class="mb-1">音声入力機能</li>
+        <li class="mb-1">カスタムプロンプトの設定</li>
       </ul>
     </div>
     
-    <a href="#" id="open-options" class="button">設定を開く</a>
+    <a href="#" id="open-options" class="block w-full py-2 px-3 mt-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-center text-sm no-underline">設定を開く</a>
   </div>
   
-  <script src="popup.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>

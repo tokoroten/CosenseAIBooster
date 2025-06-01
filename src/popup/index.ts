@@ -31,10 +31,10 @@ function checkCurrentTab(): void {
     if (statusMessage) {
       if (currentTab.url && currentTab.url.includes('scrapbox.io')) {
         statusMessage.textContent = 'Cosenseページで動作中';
-        statusMessage.style.color = '#4CAF50';
+        statusMessage.className = 'text-sm text-green-600 mb-3';
       } else {
         statusMessage.textContent = 'Cosenseページでのみ機能します';
-        statusMessage.style.color = '#F44336';
+        statusMessage.className = 'text-sm text-red-600 mb-3';
       }
     }
   });

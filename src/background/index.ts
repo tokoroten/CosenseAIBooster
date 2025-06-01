@@ -1,156 +1,194 @@
 /**
  * Background script for Cosense AI Booster
  */
+import { APIClientFactory, APIClientOptions, CompletionRequest } from '../api';
+import { Prompt, Settings, StorageService } from '../utils/storage';
 
 // サービスワーカー起動時の初期化
 chrome.runtime.onInstalled.addListener(() => {
+  // eslint-disable-next-line no-console
   console.log('Cosense AI Booster extension installed');
   
-  // コンテキストメニューの作成
-  setupContextMenus();
-  
-  // 初期設定がない場合は、デフォルト設定を保存
-  initializeDefaultSettings();
+  // 初期設定とコンテキストメニューのセットアップ
+  initializeExtension();
 });
+
+/**
+ * 拡張機能の初期化
+ */
+async function initializeExtension(): Promise<void> {
+  // 設定を初期化
+  await StorageService.initializeSettings();
+  
+  // コンテキストメニューのセットアップ
+  setupContextMenus();
+}
 
 /**
  * コンテキストメニューをセットアップする
  */
-function setupContextMenus(): void {
-  // 以前のコンテキストメニューを削除
-  chrome.contextMenus.removeAll(() => {
-    // プロンプト用のベースメニュー
+async function setupContextMenus(): Promise<void> {
+  // 以前のメニューをクリア
+  await new Promise<void>((resolve) => {
+    chrome.contextMenus.removeAll(() => {
+      resolve();
+    });
+  });
+  
+  // ベースメニューを作成
+  chrome.contextMenus.create({
+    id: 'cosenseAIBooster',
+    title: 'Cosense AI Booster',
+    contexts: ['selection'],
+    documentUrlPatterns: ['*://scrapbox.io/*']
+  });
+  
+  // 保存されているプロンプトを取得
+  const settings = await StorageService.getSettings();
+  if (!settings) return;
+  
+  // 各プロンプトのサブメニューを作成
+  settings.prompts.forEach((prompt) => {
     chrome.contextMenus.create({
-      id: 'cosenseAIBooster',
-      title: 'Cosense AI Booster',
+      id: prompt.id,
+      parentId: 'cosenseAIBooster',
+      title: prompt.name,
       contexts: ['selection'],
       documentUrlPatterns: ['*://scrapbox.io/*']
-    });
-    
-    // サブメニューはストレージから取得したプロンプトから動的に生成する
-    loadPrompts().then(prompts => {
-      prompts.forEach((prompt, index) => {
-        chrome.contextMenus.create({
-          id: `prompt-${index}`,
-          parentId: 'cosenseAIBooster',
-          title: prompt.name || `プロンプト ${index + 1}`,
-          contexts: ['selection'],
-          documentUrlPatterns: ['*://scrapbox.io/*']
-        });
-      });
     });
   });
 }
 
 /**
- * コンテキストメニュークリック時のハンドラを設定
+ * コンテキストメニューのクリックハンドラ
  */
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (!tab?.id) return;
+  if (!tab?.id || !info.selectionText) return;
   
-  const menuId = info.menuItemId;
-  if (typeof menuId === 'string' && menuId.startsWith('prompt-')) {
-    const promptIndex = parseInt(menuId.replace('prompt-', ''));
-    
-    // 選択されたテキストとプロンプトをコンテンツスクリプトに送信
-    loadPrompts().then(prompts => {
-      if (prompts[promptIndex]) {
-        chrome.tabs.sendMessage(tab.id, {
-          action: 'applyPrompt',
-          selectedText: info.selectionText,
-          promptData: prompts[promptIndex]
-        });
-      }
-    });
+  const promptId = info.menuItemId.toString();
+  
+  if (promptId !== 'cosenseAIBooster') {
+    handlePromptSelection(tab.id, promptId, info.selectionText);
   }
 });
 
 /**
- * 保存されているプロンプトを読み込む
+ * プロンプト選択時の処理
  */
-async function loadPrompts(): Promise<any[]> {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get('prompts', (result) => {
-      const prompts = result.prompts || [];
-      resolve(prompts);
-    });
+async function handlePromptSelection(tabId: number, promptId: string, selectedText: string): Promise<void> {
+  const settings = await StorageService.getSettings();
+  if (!settings) return;
+  
+  const selectedPrompt = settings.prompts.find(p => p.id === promptId);
+  if (!selectedPrompt) return;
+  
+  // コンテンツスクリプトにメッセージを送信して選択されたプロンプトを処理
+  chrome.tabs.sendMessage(tabId, {
+    action: 'startProcessingPrompt',
+    data: {
+      selectedText,
+      promptId,
+      insertPosition: settings.insertPosition
+    }
   });
+  
+  // APIリクエスト処理
+  try {
+    const result = await processPrompt(selectedPrompt, selectedText, settings);
+    
+    // 処理結果をコンテンツスクリプトに送信
+    chrome.tabs.sendMessage(tabId, {
+      action: 'insertProcessedText',
+      data: {
+        text: result,
+        promptId,
+        insertPosition: settings.insertPosition
+      }
+    });
+  } catch (error) {
+    // エラー処理
+    chrome.tabs.sendMessage(tabId, {
+      action: 'showError',
+      data: {
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        promptId
+      }
+    });
+  }
 }
 
 /**
- * デフォルト設定を初期化
+ * プロンプト処理とAPI呼び出し
  */
-function initializeDefaultSettings(): void {
-  chrome.storage.sync.get(['initialized'], (result) => {
-    if (result.initialized) return;
-    
-    const defaultSettings = {
-      initialized: true,
-      insertPosition: 'below', // 'below' or 'bottom'
-      speechRecognitionLang: 'ja-JP',
-      apiSettings: {
-        openai: {
-          apiKey: '',
-          model: 'gpt-3.5-turbo'
-        },
-        openrouter: {
-          apiKey: '',
-          model: 'openai/gpt-3.5-turbo'
-        },
-        custom: {
-          endpoint: '',
-          apiKey: '',
-          model: ''
-        },
-        activeProvider: 'openai'
-      },
-      prompts: [
-        {
-          name: '要約',
-          content: '以下のテキストを3行程度に要約してください:\n\n{{text}}',
-          model: 'gpt-3.5-turbo'
-        },
-        {
-          name: 'コメントを付ける',
-          content: '以下のテキストに対する洞察や追加のコメントを提供してください:\n\n{{text}}',
-          model: 'gpt-3.5-turbo'
-        }
-      ]
-    };
-    
-    chrome.storage.sync.set(defaultSettings);
-  });
+async function processPrompt(prompt: Prompt, selectedText: string, settings: Settings): Promise<string> {
+  // API設定の準備
+  const apiOptions: APIClientOptions = {
+    provider: settings.apiProvider,
+    apiKey: '',
+    model: prompt.model,
+    customEndpoint: settings.customEndpoint
+  };
+  
+  // プロバイダごとに適切なAPIキーを設定
+  switch (settings.apiProvider) {
+    case 'openai':
+      apiOptions.apiKey = settings.openaiKey;
+      if (!prompt.model) {
+        apiOptions.model = settings.openaiModel;
+      }
+      break;
+      
+    case 'openrouter':
+      apiOptions.apiKey = settings.openrouterKey;
+      if (!prompt.model) {
+        apiOptions.model = settings.openrouterModel;
+      }
+      break;
+      
+    case 'custom':
+      apiOptions.apiKey = settings.customKey;
+      if (!prompt.model) {
+        apiOptions.model = settings.customModel;
+      }
+      break;
+  }
+  
+  // API呼び出しのリクエスト準備
+  const request: CompletionRequest = {
+    prompt: prompt.content,
+    selectedText,
+    temperature: 0.7,
+    maxTokens: 1000
+  };
+  
+  // APIを呼び出して結果を取得
+  return await APIClientFactory.getCompletion(apiOptions, request);
 }
 
-// メッセージリスナーの設定
+/**
+ * メッセージリスナー
+ */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'updateContextMenus') {
-    setupContextMenus();
-    sendResponse({ success: true });
+    setupContextMenus()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
   }
   
   if (message.action === 'processPrompt') {
-    processPromptRequest(message.data)
-      .then(response => sendResponse({ success: true, result: response }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
-    return true; // 非同期レスポンスのために true を返す
+    const prompt = message.data.prompt as Prompt;
+    const selectedText = message.data.selectedText as string;
+    
+    StorageService.getSettings()
+      .then((settings) => {
+        if (!settings) throw new Error('Settings not found');
+        return processPrompt(prompt, selectedText, settings);
+      })
+      .then((result) => sendResponse({ success: true, result }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true;
   }
   
   return false;
 });
-
-/**
- * プロンプトリクエストを処理し、APIを呼び出す
- */
-async function processPromptRequest(data: any): Promise<string> {
-  // APIの設定を取得
-  const settings = await new Promise((resolve) => {
-    chrome.storage.sync.get(['apiSettings'], (result) => {
-      resolve(result.apiSettings);
-    });
-  });
-  
-  // この部分は実際のAPI実装時に拡張する
-  // 現在はモック実装
-  return `AIからの応答をここに表示します。（実際のAPI実装は今後追加予定）`;
-}
