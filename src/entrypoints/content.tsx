@@ -41,147 +41,115 @@ const ContentApp: React.FC = () => {
     setPrompts(useSettingsStore.getState().prompts);
     const unsub = useSettingsStore.subscribe((state) => setPrompts(state.prompts));
 
-    const interval = setInterval(() => {
-      const pageMenu = document.querySelector('.page-menu');
-      if (pageMenu && !document.getElementById('cosense-ai-page-menu-btn')) {
-        // Create a new button styled like existing tool-btn
-        const btn = document.createElement('button');
-        btn.id = 'cosense-ai-page-menu-btn';
-        btn.className = 'tool-btn';
-        btn.type = 'button';
-        btn.setAttribute('aria-label', 'Cosense AI Booster 実験ボタン');
-        btn.innerHTML = `
-          <span style="font-size:16px;line-height:1;" role="img" aria-label="実験">🧪</span>
-        `;
-        btn.onclick = () => alert('Cosense拡張の動作確認用アラートです');
-        // 既存のdropdownやrandom-jump-buttonの直前に挿入（末尾に追加でもOK）
-        pageMenu.appendChild(btn);
-        clearInterval(interval);
-      }
-    }, 500);
-
-    // ポップアップメニュー表示時にカスタムボタンを追加
+    // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(() => {
-      addButtonToPopupMenu({
-        id: 'cosense-ai-popup-btn',
-        label: 'AI Booster',
-        className: 'cosense-ai-popup-btn',
-        onClick: async () => {
-          let selected = '';
-          const popup = document.querySelector('.popup-menu');
-          if (popup && popup instanceof HTMLElement) {
-            const textInput = document.querySelector('textarea#text-input.text-input');
-            if (textInput && textInput instanceof HTMLTextAreaElement && textInput.value) {
-              selected = textInput.value;
+      // 共通の選択テキスト取得ロジック
+      const getSelectedText = (): string => {
+        let selected = '';
+        const popup = document.querySelector('.popup-menu');
+        if (popup && popup instanceof HTMLElement) {
+          const textInput = document.querySelector('textarea#text-input.text-input');
+          if (textInput && textInput instanceof HTMLTextAreaElement && textInput.value) {
+            selected = textInput.value;
+          }
+        }
+        if (!selected) {
+          selected = window.getSelection()?.toString() || '';
+        }
+        return selected;
+      };
+
+      // 各プロンプトに対してボタンを追加
+      prompts.forEach((prompt, index) => {
+        addButtonToPopupMenu({
+          id: `cosense-prompt-${prompt.id}`,
+          label: prompt.name,
+          className: `cosense-prompt-btn prompt-${index}`,
+          onClick: async () => {
+            const selected = getSelectedText();
+            if (!selected) {
+              alert('テキストが選択されていません');
+              return;
             }
-          }
-          if (!selected) {
-            selected = window.getSelection()?.toString() || '';
-          }
-          // プロンプト選択ダイアログを表示
-          const prompt = await new Promise<Prompt | null>((resolve) => {
-            const dialog = document.createElement('dialog');
-            dialog.style.padding = '1.5em';
-            dialog.style.zIndex = '9999';
-            dialog.innerHTML = `
-              <form method="dialog" style="margin:0;min-width:350px;">
-                <label style="font-weight:bold;">AIプロンプトを選択:</label><br />
-                <select id="ai-prompt-select" style="width:100%;margin:8px 0;">
-                  ${prompts.map((p) => `<option value="${p.id}">${p.name}</option>`).join('')}
-                </select><br />
-                <label style="font-weight:bold;">選択テキスト:</label><br />
-                <textarea style="width:100%;height:100px;resize:vertical;">${selected
-                  .replace(/</g, '&lt;')
-                  .replace(/>/g, '&gt;')}</textarea><br />
-                <button type="submit" style="margin-top:1em;">実行</button>
-                <button type="button" id="cancel-btn" style="margin-left:1em;">キャンセル</button>
-              </form>
-            `;
-            document.body.appendChild(dialog);
-            dialog.showModal();
-            dialog.querySelector('#cancel-btn')?.addEventListener('click', () => {
-              dialog.close();
-              dialog.remove();
-              resolve(null);
-            });
-            dialog.addEventListener('close', () => {
-              if (dialog.returnValue !== 'cancel') {
-                const select = dialog.querySelector('#ai-prompt-select') as HTMLSelectElement;
-                resolve(prompts.find((p) => p.id === select.value) || null);
-              } else {
-                resolve(null);
-              }
-              dialog.remove();
-            });
-          });
-          if (!prompt) return;
-          // API呼び出し
-          const settings = useSettingsStore.getState();
-          // プロンプト個別設定優先
-          let provider = prompt.provider || settings.apiProvider;
-          let apiKey = '';
-          let model = prompt.model || '';
-          let customEndpoint: string | undefined = undefined;
-          // APIClientFactoryの型に合わせてlocalllmはcustom扱い
-          if (provider === 'localllm') provider = 'custom';
-          if (provider === 'openai') {
-            apiKey = settings.openaiKey;
-            if (!model) model = settings.openaiModel;
-          } else if (provider === 'openrouter') {
-            apiKey = settings.openrouterKey;
-            if (!model) model = settings.openrouterModel;
-          } else if (provider === 'custom') {
-            apiKey = settings.customKey;
-            if (!model) model = settings.customModel;
-            customEndpoint = settings.customEndpoint;
-          }
-          const options = {
-            provider: provider as 'openai' | 'openrouter' | 'custom',
-            apiKey,
-            model,
-            customEndpoint,
-          };
-          const request = {
-            prompt: prompt.content,
-            selectedText: selected,
-            temperature: 0.7,
-            maxTokens: 2000,
-          };
-          // 結果表示用ダイアログ
-          const resultDialog = document.createElement('dialog');
-          resultDialog.style.padding = '1.5em';
-          resultDialog.style.zIndex = '9999';
-          resultDialog.innerHTML = `<div>AI処理中...</div>`;
-          document.body.appendChild(resultDialog);
-          resultDialog.showModal();
-          try {
-            const result = await APIClientFactory.getCompletion(options, request);
-            resultDialog.innerHTML = `<div style="white-space:pre-wrap;max-width:500px;">${result.replace(
-              /</g,
-              '&lt;'
-            )}</div><div style="margin-top:1em;"><button id="insert-btn">Cosenseに挿入</button> <button id="close-btn">閉じる</button></div>`;
-            resultDialog.querySelector('#insert-btn')?.addEventListener('click', () => {
-              // 挿入位置はプロンプト個別設定優先
-              const domUtils = new CosenseDOMUtils();
-              const insertPosition = prompt.insertPosition || settings.insertPosition;
-              domUtils.insertText(result, insertPosition);
-              resultDialog.close();
-              resultDialog.remove();
-            });
-            resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-              resultDialog.close();
-              resultDialog.remove();
-            });
-          } catch (e) {
-            resultDialog.innerHTML = `<div style="color:red;">AI処理に失敗しました</div><div style="margin-top:1em;"><button id="close-btn">閉じる</button></div>`;
-            resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-              resultDialog.close();
-              resultDialog.remove();
-            });
-          }
-        },
+            
+            // API呼び出し処理を実行
+            const settings = useSettingsStore.getState();
+            // プロンプト個別設定優先
+            let provider = prompt.provider || settings.apiProvider;
+            let apiKey = '';            let model = prompt.model || '';
+            
+            if (provider === 'openai') {
+              apiKey = settings.openaiKey;
+              if (!model) model = settings.openaiModel;
+            } else if (provider === 'openrouter') {
+              apiKey = settings.openrouterKey;
+              if (!model) model = settings.openrouterModel;
+            }
+            
+            const options = {
+              provider: provider as 'openai' | 'openrouter',
+              apiKey,
+              model,
+            };
+            const request = {
+              prompt: prompt.content,
+              selectedText: selected,
+              temperature: 0.7,
+              maxTokens: 2000,
+            };
+            
+            // 結果表示用ダイアログ
+            const resultDialog = document.createElement('dialog');
+            resultDialog.style.padding = '1.5em';
+            resultDialog.style.zIndex = '9999';
+            resultDialog.innerHTML = `<div>AI処理中...</div>
+              <div style="margin-top:0.5em;font-size:12px;">
+                <div><strong>システムプロンプト:</strong> ${prompt.name}</div>
+                <div><strong>ユーザー入力:</strong> ${selected.length > 30 ? selected.substring(0, 30) + '...' : selected}</div>
+              </div>`;
+            document.body.appendChild(resultDialog);
+            resultDialog.showModal();
+            
+            try {
+              const result = await APIClientFactory.getCompletion(options, request);
+              resultDialog.innerHTML = `
+                <div style="margin-bottom:0.5em;">
+                  <div><strong>システムプロンプト:</strong> ${prompt.name}</div>
+                  <div><strong>ユーザー入力:</strong> ${selected.length > 30 ? selected.substring(0, 30) + '...' : selected}</div>
+                </div>
+                <div style="white-space:pre-wrap;max-width:500px;border-top:1px solid #ddd;padding-top:0.5em;">${result.replace(
+                  /</g,
+                  '&lt;'
+                )}</div>
+                <div style="margin-top:1em;">
+                  <button id="insert-btn">Cosenseに挿入</button> 
+                  <button id="close-btn">閉じる</button>
+                </div>
+              `;
+              resultDialog.querySelector('#insert-btn')?.addEventListener('click', () => {
+                // 挿入位置はプロンプト個別設定優先
+                const domUtils = new CosenseDOMUtils();
+                const insertPosition = prompt.insertPosition || settings.insertPosition;
+                domUtils.insertText(result, insertPosition);
+                resultDialog.close();
+                resultDialog.remove();
+              });
+              resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
+                resultDialog.close();
+                resultDialog.remove();
+              });
+            } catch (e) {
+              resultDialog.innerHTML = `<div style="color:red;">AI処理に失敗しました</div><div style="margin-top:1em;"><button id="close-btn">閉じる</button></div>`;
+              resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
+                resultDialog.close();
+                resultDialog.remove();
+              });
+            }
+          },
+        });
       });
     });
+    
     // マイクボタン設置
     let overlay: HTMLDivElement | null = null;
     let recognition: SpeechRecognitionService | null = null;
@@ -243,6 +211,7 @@ const ContentApp: React.FC = () => {
                 overlayLeft = window.innerWidth / 2 - 100;
                 overlayTop = window.innerHeight / 2 - 20;
               }
+              
               // 右端はみ出し防止
               const maxWidth = Math.min(400, window.innerWidth * 0.8);
               overlay.style.position = 'fixed';
@@ -310,8 +279,8 @@ const ContentApp: React.FC = () => {
     const micInterval = setInterval(setupMicButton, 1000);
 
     return () => {
-      clearInterval(interval);
       unsub();
+      disconnect();
       clearInterval(micInterval);
       overlay?.remove();
     };

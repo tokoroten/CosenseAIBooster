@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSettingsStore, useUIStore } from '../store';
+import { OpenAIClient } from '../api/openai';
 
 type TabId = 'prompts' | 'general' | 'api';
 
@@ -153,8 +154,8 @@ const PromptsTab: React.FC = () => {
                   <option value="">（全体設定に従う）</option>
                   <option value="openai">OpenAI</option>
                   <option value="openrouter">OpenRouter</option>
-                  <option value="custom">カスタム</option>
-                  <option value="localllm">LocalLLM</option>
+                  {/* <option value="custom">カスタム</option>
+                  <option value="localllm">LocalLLM</option> */}
                 </select>
               </div>
               <div>
@@ -180,7 +181,7 @@ const PromptsTab: React.FC = () => {
                       <option value="google/gemini-pro">Google: Gemini Pro</option>
                     </>
                   )}
-                  {(editingPrompt.provider || apiProvider) === 'custom' && (
+                  {/* {(editingPrompt.provider || apiProvider) === 'custom' && (
                     <>
                       <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
                       <option value="gpt-4">gpt-4</option>
@@ -191,7 +192,7 @@ const PromptsTab: React.FC = () => {
                       <option value="llama3">llama3</option>
                       <option value="other">other</option>
                     </>
-                  )}
+                  )} */}
                 </select>
               </div>
               <div>
@@ -312,22 +313,22 @@ const ApiTab: React.FC = () => {
     openaiModel,
     openrouterKey,
     openrouterModel,
-    customEndpoint,
-    customKey,
-    customModel,
+    // customEndpoint,
+    // customKey,
+    // customModel,
     setApiProvider,
     setOpenaiKey,
     setOpenaiModel,
     setOpenrouterKey,
     setOpenrouterModel,
-    setCustomEndpoint,
-    setCustomKey,
-    setCustomModel,
+    // setCustomEndpoint,
+    // setCustomKey,
+    // setCustomModel,
   } = useSettingsStore();
 
   const [showOpenAIKey, setShowOpenAIKey] = React.useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = React.useState(false);
-  const [showCustomKey, setShowCustomKey] = React.useState(false);
+  // const [showCustomKey, setShowCustomKey] = React.useState(false);
   const [verifyStatus, setVerifyStatus] = React.useState<string | null>(null);
   const [verifying, setVerifying] = React.useState(false);
 
@@ -338,7 +339,7 @@ const ApiTab: React.FC = () => {
     try {
       let valid = false;
       if (apiProvider === 'openai' && openaiKey) {
-        const client = new (await import('../api/openai')).OpenAIClient(openaiKey);
+        const client = new OpenAIClient(openaiKey, 'openai');
         await client.createChatCompletion({
           model: openaiModel,
           messages: [{ role: 'user', content: 'ping' }],
@@ -346,20 +347,9 @@ const ApiTab: React.FC = () => {
         });
         valid = true;
       } else if (apiProvider === 'openrouter' && openrouterKey) {
-        const client = new (await import('../api/openrouter')).OpenRouterClient(openrouterKey);
+        const client = new OpenAIClient(openrouterKey, 'openrouter');
         await client.createChatCompletion({
           model: openrouterModel,
-          messages: [{ role: 'user', content: 'ping' }],
-          max_tokens: 1,
-        });
-        valid = true;
-      } else if (apiProvider === 'custom' && customEndpoint && customKey) {
-        const client = new (await import('../api/custom')).CustomAPIClient(
-          customEndpoint,
-          customKey
-        );
-        await client.createChatCompletion({
-          model: customModel,
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 1,
         });
@@ -402,7 +392,7 @@ const ApiTab: React.FC = () => {
               OpenRouter
             </label>
           </div>
-          <div className="flex items-center">
+          {/* <div className="flex items-center">
             <input
               id="provider-custom"
               type="radio"
@@ -413,7 +403,7 @@ const ApiTab: React.FC = () => {
             <label htmlFor="provider-custom" className="ml-3 block text-sm text-gray-700">
               カスタムエンドポイント
             </label>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -506,7 +496,7 @@ const ApiTab: React.FC = () => {
         </div>
       )}
 
-      {apiProvider === 'custom' && (
+      {/* {apiProvider === 'custom' && (
         <div>
           <h3 className="text-lg font-medium">カスタム API 設定</h3>
           <div className="mt-2 space-y-4">
@@ -559,7 +549,7 @@ const ApiTab: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="flex items-center gap-2 mt-2">
         <button

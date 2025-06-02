@@ -9,17 +9,11 @@ interface SettingsState extends Settings {
   deletePrompt: (id: string) => void;
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
-  setApiProvider: (provider: 'openai' | 'openrouter' | 'custom' | 'localllm') => void;
+  setApiProvider: (provider: 'openai' | 'openrouter') => void;
   setOpenaiKey: (key: string) => void;
   setOpenaiModel: (model: string) => void;
   setOpenrouterKey: (key: string) => void;
   setOpenrouterModel: (model: string) => void;
-  setCustomEndpoint: (endpoint: string) => void;
-  setCustomKey: (key: string) => void;
-  setCustomModel: (model: string) => void;
-  setLocalLLMEndpoint: (endpoint: string) => void;
-  setLocalLLMKey: (key: string) => void;
-  setLocalLLMModel: (model: string) => void;
 }
 
 interface SpeechState {
@@ -47,29 +41,29 @@ const defaultSettings: Settings = {
     {
       id: 'default-summary',
       name: '要約',
-      content: '以下のテキストを要約してください:\n\n{{text}}',
+      systemPrompt: 'あなたは与えられたテキストを要約してください',
+      model: 'gpt-3.5-turbo',
+    },
+    {
+      id: 'default-summary',
+      name: '音声認識成形',
+      systemPrompt: 'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする\n\n以下のテキストを整形してください:\n\n{{text}}',
       model: 'gpt-3.5-turbo',
     },
     {
       id: 'default-translate-ja-en',
-      name: '翻訳（日本語→英語）',
-      content: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
+      name: '翻訳（日→英）',
+      systemPrompt: 'あなたは与えられたテキストを英語に翻訳してください',
       model: 'gpt-3.5-turbo',
     },
+
   ],
   insertPosition: 'below',
   speechLang: 'ja-JP',
   apiProvider: 'openai',
   openaiKey: '',
-  openaiModel: 'gpt-3.5-turbo',
-  openrouterKey: '',
-  openrouterModel: 'openai/gpt-3.5-turbo',
-  customEndpoint: '',
-  customKey: '',
-  customModel: '',
-  localllmEndpoint: 'http://localhost:8080',
-  localllmKey: '',
-  localllmModel: 'llama3',
+  openaiModel: 'gpt-3.5-turbo',  openrouterKey: '',
+  openrouterModel: 'openai/gpt-3.5-turbo'
 };
 
 // Settings store with persistence
@@ -88,14 +82,8 @@ export const useSettingsStore = create<SettingsState>()(
       setSpeechLang: (speechLang) => set({ speechLang }),
       setApiProvider: (apiProvider) => set({ apiProvider }),
       setOpenaiKey: (openaiKey) => set({ openaiKey }),
-      setOpenaiModel: (openaiModel) => set({ openaiModel }),
-      setOpenrouterKey: (openrouterKey) => set({ openrouterKey }),
-      setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),      setCustomEndpoint: (customEndpoint) => set({ customEndpoint }),
-      setCustomKey: (customKey) => set({ customKey }),
-      setCustomModel: (customModel) => set({ customModel }),
-      setLocalLLMEndpoint: (localllmEndpoint) => set({ localllmEndpoint }),
-      setLocalLLMKey: (localllmKey) => set({ localllmKey }),
-      setLocalLLMModel: (localllmModel) => set({ localllmModel }),
+      setOpenaiModel: (openaiModel) => set({ openaiModel }),      setOpenrouterKey: (openrouterKey) => set({ openrouterKey }),
+      setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),
     }),
     {
       name: 'cosense-ai-settings',

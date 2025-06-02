@@ -3,9 +3,9 @@
 export interface Prompt {
   id: string;
   name: string;
-  content: string;
+  systemPrompt: string;
   model: string;
-  provider?: 'openai' | 'openrouter' | 'custom' | 'localllm'; // 個別プロバイダー指定（省略時は全体設定依存）
+  provider?: 'openai' | 'openrouter'; // 個別プロバイダー指定（省略時は全体設定依存）
   insertPosition?: 'below' | 'bottom'; // 個別挿入位置（省略時は全体設定依存）
 }
 
@@ -13,17 +13,11 @@ export interface Settings {
   prompts: Prompt[];
   insertPosition: 'below' | 'bottom';
   speechLang: string;
-  apiProvider: 'openai' | 'openrouter' | 'custom' | 'localllm';
+  apiProvider: 'openai' | 'openrouter';
   openaiKey: string;
   openaiModel: string;
   openrouterKey: string;
   openrouterModel: string;
-  customEndpoint: string;
-  customKey: string;
-  customModel: string;
-  localllmEndpoint: string;
-  localllmKey: string;
-  localllmModel: string;
 }
 
 export class StorageService {
@@ -33,13 +27,13 @@ export class StorageService {
       {
         id: 'default-summary',
         name: '要約',
-        content: '以下のテキストを要約してください:\n\n{{text}}',
+        systemPrompt: '以下のテキストを要約してください:\n\n{{text}}',
         model: 'gpt-3.5-turbo',
       },
       {
         id: 'default-translate-ja-en',
         name: '翻訳（日本語→英語）',
-        content: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
+        systemPrompt: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
         model: 'gpt-3.5-turbo',
       },
     ],
@@ -50,12 +44,6 @@ export class StorageService {
     openaiModel: 'gpt-3.5-turbo',
     openrouterKey: '',
     openrouterModel: 'openai/gpt-3.5-turbo',
-    customEndpoint: '',
-    customKey: '',
-    customModel: '',
-    localllmEndpoint: 'http://localhost:8080',
-    localllmKey: '',
-    localllmModel: 'llama3',
   };
 
   /**
@@ -218,9 +206,6 @@ export class StorageService {
       'openaiModel',
       'openrouterKey',
       'openrouterModel',
-      'customEndpoint',
-      'customKey',
-      'customModel',
     ];
 
     for (const prop of requiredProps) {
@@ -288,7 +273,7 @@ export class StorageService {
     const newPrompt: Prompt = {
       id: prompt.id || this.generateId(),
       name: prompt.name,
-      content: prompt.content,
+      systemPrompt: prompt.systemPrompt,
       model: prompt.model,
       provider: prompt.provider, // 追加
       insertPosition: prompt.insertPosition, // 追加

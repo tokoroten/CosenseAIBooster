@@ -1,67 +1,79 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import { OpenAI } from 'openai';
+import { AIClient, AIProvider, AIRequestOptions, OpenRouterResponse } from './ai-client';
 
-interface OpenAIRequestOptions {
-  model: string;
-  messages: {
-    role: 'system' | 'user' | 'assistant';
-    content: string;
-  }[];
-  temperature?: number;
-  max_tokens?: number;
-}
+/**
+ * AI API クライアント（OpenAI と OpenRouter の両方をサポート）
+ */
+export class OpenAIClient implements AIClient {
+  private readonly openaiClient?: OpenAI;
+  private readonly apiKey: string;
+  private readonly provider: AIProvider;
+  private readonly baseURL: string = 'https://openrouter.ai/api/v1';
 
-interface OpenAIResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: {
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }[];
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
-export class OpenAIClient {
-  private apiKey: string;
-  private baseURL: string;
-
-  constructor(apiKey: string, baseURL = 'https://api.openai.com/v1') {
+  constructor(apiKey: string, provider: AIProvider = 'openai') {
     this.apiKey = apiKey;
-    this.baseURL = baseURL;
+    this.provider = provider;
+    
+    if (provider === 'openai') {
+      this.openaiClient = new OpenAI({ apiKey });
+    }
   }
 
-  async createChatCompletion(options: OpenAIRequestOptions): Promise<string> {
+  /**
+   * チャット補完を作成
+   */
+  async createChatCompletion(options: AIRequestOptions): Promise<string> {
     try {
-      const config: AxiosRequestConfig = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-      };
-
-      const response = await axios.post<OpenAIResponse>(
-        `${this.baseURL}/chat/completions`,
-        {
+      if (this.provider === 'openai' && this.openaiClient) {
+        // OpenAI用の処理
+        const response = await this.openaiClient.chat.completions.create({
           model: options.model,
           messages: options.messages,
           temperature: options.temperature || 0.7,
-          max_tokens: options.max_tokens || 1000,
-        },
-        config
-      );
+          max_tokens: options.max_tokens || 2000,
+        });
 
-      return response.data.choices[0].message.content;
+        if (!response.choices || response.choices.length === 0) {
+          throw new Error('OpenAI API did not return any response choices');
+        }
+
+        return response.choices[0].message.content || '';
+      } else if (this.provider === 'openrouter') {
+        // OpenRouter用の処理
+        const response = await fetch(`${this.baseURL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+            'HTTP-Referer': 'https://github.com/shinshin86/CosenseAIBooster',
+          },
+          body: JSON.stringify({
+            model: options.model,
+            messages: options.messages,
+            temperature: options.temperature || 0.7,
+            max_tokens: options.max_tokens || 2000,
+            stream: false,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`OpenRouter API error: ${response.status} ${errorBody}`);
+        }
+
+        const data = (await response.json()) as OpenRouterResponse;
+        
+        if (!data.choices || data.choices.length === 0) {
+          throw new Error('OpenRouter API did not return any response choices');
+        }
+
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Unsupported AI provider: ${this.provider}`);
+      }
     } catch (error) {
-      console.error('OpenAI API Error:', error);
+      // eslint-disable-next-line no-console
+      console.error(`${this.provider} API Error:`, error);
       throw error;
     }
   }

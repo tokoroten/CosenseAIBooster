@@ -1,14 +1,10 @@
 import { OpenAIClient } from './openai';
-import { OpenRouterClient } from './openrouter';
-import { CustomAPIClient } from './custom';
-import { LocalLLMClient } from './localllm';
 import { useSettingsStore } from '../store';
 
 export interface APIClientOptions {
-  provider: 'openai' | 'openrouter' | 'custom' | 'localllm';
+  provider: 'openai' | 'openrouter';
   apiKey: string;
   model: string;
-  customEndpoint?: string;
 }
 
 export interface CompletionRequest {
@@ -24,7 +20,7 @@ export class APIService {
    */
   static getOptionsFromStore(): APIClientOptions {
     const state = useSettingsStore.getState();
-    
+
     // Based on the selected provider, return the appropriate options
     switch (state.apiProvider) {
       case 'openai':
@@ -33,32 +29,21 @@ export class APIService {
           apiKey: state.openaiKey,
           model: state.openaiModel,
         };
-      
+
       case 'openrouter':
         return {
           provider: 'openrouter',
           apiKey: state.openrouterKey,
           model: state.openrouterModel,
         };
-      
-      case 'custom':
-        return {
-          provider: 'custom',
-          apiKey: state.customKey,
-          model: state.customModel,
-          customEndpoint: state.customEndpoint,
-        };
-        
-      case 'localllm':
-        return {
-          provider: 'localllm',
-          apiKey: state.localllmKey,
-          model: state.localllmModel,
-          customEndpoint: state.localllmEndpoint,
-        };
-      
+
       default:
-        throw new Error('Unknown API provider');
+        // fallback to openai
+        return {
+          provider: 'openai',
+          apiKey: state.openaiKey,
+          model: state.openaiModel,
+        };
     }
   }
 
@@ -71,19 +56,19 @@ export class APIService {
   static async getCompletionForPrompt(promptId: string, selectedText: string): Promise<string> {
     const state = useSettingsStore.getState();
     const prompt = state.prompts.find((p) => p.id === promptId);
-    
+
     if (!prompt) {
       throw new Error(`Prompt with ID ${promptId} not found`);
     }
-    
+
     const options = this.getOptionsFromStore();
     const request: CompletionRequest = {
-      prompt: prompt.content,
+      prompt: prompt.systemPrompt,
       selectedText,
       temperature: 0.7,
       maxTokens: 2000,
     };
-    
+
     return await this.getCompletion(options, request);
   }
 
@@ -98,123 +83,34 @@ export class APIService {
       if (!options || !request || !request.prompt) {
         throw new Error('Invalid API request parameters');
       }
-      
+
       // Replace {{text}} in the prompt with the selected text
-      const promptWithText = request.prompt.replace('{{text}}', request.selectedText || '');
+      // プロンプトをシステムプロンプトとして使用し、選択テキストをユーザープロンプトとして使用
+      const systemPrompt = request.prompt.replace('{{text}}', ''); // {{text}}プレースホルダーをシステムプロンプトから削除
 
       const messages = [
         {
           role: 'system' as const,
-          content: 'You are a helpful assistant.',
+          content: systemPrompt,
         },
         {
           role: 'user' as const,
-          content: promptWithText,
+          content: request.selectedText || '',
         },
       ];
 
-      switch (options.provider) {
-        case 'openai':
-          return await this.getOpenAICompletion(options.apiKey, options.model, messages, request);
-
-        case 'openrouter':
-          return await this.getOpenRouterCompletion(
-            options.apiKey,
-            options.model,
-            messages,
-            request
-          );
-
-        case 'custom':
-          if (!options.customEndpoint) {
-            throw new Error('Custom endpoint URL is required for custom API provider');
-          }
-          return await this.getCustomCompletion(
-            options.apiKey,
-            options.model,
-            options.customEndpoint,
-            messages,
-            request
-          );
-          
-        case 'localllm':
-          if (!options.customEndpoint) {
-            throw new Error('Local LLM endpoint URL is required');
-          }
-          return await this.getLocalLLMCompletion(
-            options.apiKey,
-            options.model,
-            options.customEndpoint,
-            messages,
-            request
-          );
-
-        default:
-          throw new Error(`Unsupported API provider: ${options.provider}`);
-      }
+      // OpenAIClient で両方のプロバイダーをサポート
+      const client = new OpenAIClient(options.apiKey, options.provider);
+      return await client.createChatCompletion({
+        model: options.model,
+        messages,
+        temperature: request.temperature,
+        max_tokens: request.maxTokens,
+      });
     } catch (error) {
-      console.error('API error:', error);
       throw error;
     }
   }
 
-  private static async getOpenAICompletion(
-    apiKey: string,
-    model: string,
-    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
-    request: CompletionRequest
-  ): Promise<string> {
-    const client = new OpenAIClient(apiKey);
-    return await client.createChatCompletion({
-      model,
-      messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-    });
-  }
-
-  private static async getOpenRouterCompletion(
-    apiKey: string,
-    model: string,
-    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
-    request: CompletionRequest
-  ): Promise<string> {
-    const client = new OpenRouterClient(apiKey);
-    return await client.createChatCompletion({
-      model,
-      messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-    });
-  }
-
-  private static async getCustomCompletion(
-    apiKey: string,
-    model: string,
-    endpoint: string,
-    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
-    request: CompletionRequest
-  ): Promise<string> {
-    const client = new CustomAPIClient(apiKey, endpoint);
-    return await client.createChatCompletion({
-      model,
-      messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-    });
-  }
-  
-  private static async getLocalLLMCompletion(
-    apiKey: string,
-    model: string,
-    endpoint: string,
-    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
-    request: CompletionRequest
-  ): Promise<string> {
-    const client = new LocalLLMClient(apiKey, endpoint);
-    return await client.createChatCompletion(model, messages, {
-      temperature: request.temperature,
-      maxTokens: request.maxTokens,
-    });
-  }
+  // OpenRouterClient と OpenAIClient の実装は統合された
 }
