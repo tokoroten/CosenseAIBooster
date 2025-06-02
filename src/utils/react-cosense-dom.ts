@@ -153,3 +153,92 @@ export class CosenseDOMUtils {
     element.dispatchEvent(event);
   }
 }
+
+/**
+ * Cosenseページ右側の.page-menuにボタンを追加するユーティリティ関数
+ * @param options ボタンの設定（id, label, icon, onClick, className）
+ * @returns 追加したボタン要素
+ */
+export function addButtonToPageMenu(options: {
+  id: string;
+  ariaLabel: string;
+  icon?: string | HTMLElement;
+  onClick?: () => void;
+  className?: string;
+}): HTMLButtonElement | null {
+  const pageMenu = document.querySelector('.page-menu');
+  if (!pageMenu) return null;
+  if (document.getElementById(options.id)) return null;
+  const btn = document.createElement('button');
+  btn.id = options.id;
+  btn.className = 'tool-btn' + (options.className ? ' ' + options.className : '');
+  btn.type = 'button';
+  btn.setAttribute('aria-label', options.ariaLabel);
+  if (typeof options.icon === 'string') {
+    btn.innerHTML = options.icon;
+  } else if (options.icon instanceof HTMLElement) {
+    btn.appendChild(options.icon);
+  } else {
+    btn.innerHTML = '';
+  }
+  if (options.onClick) btn.onclick = options.onClick;
+  pageMenu.appendChild(btn);
+  return btn;
+}
+
+/**
+ * Cosenseの選択範囲ポップアップメニュー（.popup-menu .button-container）にボタンを追加するユーティリティ関数
+ * @param options ボタンの設定（id, label, onClick, className）
+ * @returns 追加したボタン要素
+ */
+export function addButtonToPopupMenu(options: {
+  id: string;
+  label: string;
+  onClick?: () => void;
+  className?: string;
+}): HTMLDivElement | null {
+  // eslint-disable-next-line no-console
+  console.log('[CosenseAI Booster] addButtonToPopupMenu called', options);
+  const popupMenu = document.querySelector('.popup-menu .button-container');
+  if (!popupMenu) {
+    // eslint-disable-next-line no-console
+    console.log('[CosenseAI Booster] .popup-menu .button-container not found');
+    return null;
+  }
+  if (document.getElementById(options.id)) {
+    // eslint-disable-next-line no-console
+    console.log('[CosenseAI Booster] button already exists:', options.id);
+    return null;
+  }
+  const btn = document.createElement('div');
+  btn.id = options.id;
+  btn.className = 'button' + (options.className ? ' ' + options.className : '');
+  btn.textContent = options.label;
+  if (options.onClick) btn.onclick = options.onClick;
+  popupMenu.appendChild(btn);
+  // eslint-disable-next-line no-console
+  console.log('[CosenseAI Booster] button added to popup menu:', btn);
+  return btn;
+}
+
+/**
+ * Cosenseの選択範囲ポップアップメニューの表示を監視し、表示時にコールバックを呼ぶユーティリティ関数
+ * @param callback .popup-menuが表示されたときに呼ばれる関数
+ * @returns disconnect関数
+ */
+export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void): () => void {
+  let lastPopup: HTMLDivElement | null = null;
+  const observer = new MutationObserver(() => {
+    const popup = document.querySelector('.popup-menu') as HTMLDivElement | null;
+    if (popup && popup !== lastPopup) {
+      lastPopup = popup;
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAI Booster] .popup-menu shown:', popup);
+      callback(popup);
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  // eslint-disable-next-line no-console
+  console.log('[CosenseAI Booster] onPopupMenuShown observer set');
+  return () => observer.disconnect();
+}

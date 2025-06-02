@@ -116,6 +116,19 @@ Cosense/Scrapbox のページ右側にあるメニューは以下のような HT
 </div>
 ```
 
+
+## 選択範囲のポップアップメニュー構造
+
+これが、テキストエリアの実体
+<textarea class="text-input hide" id="text-input" wrap="off" spellcheck="false" autocapitalize="none" style="top: 50px; left: 0px; height: 306px; width: 100%; z-index: 106;" readonly=""></textarea>
+
+これが範囲選択されると、次のようなポップアップメニューが表示される
+
+<div class="button-container" style="transform: translateX(-20.7476%); left: 141.868px;"><div class="button split-page-button">新規ページに分割</div><div class="button copy-plain-button">プレーンテキストをコピー</div></div>
+
+ここに必要な機能を追加することで、選択範囲のポップアップメニューを拡張する
+
+
 ### CSSクラス
 - `page-menu`: メニュー全体を囲むコンテナ
 - `dropdown`: ドロップダウンメニュー用コンテナ

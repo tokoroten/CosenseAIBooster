@@ -140,7 +140,7 @@ const PromptsTab: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">内容</label>
                 <div className="mt-1 text-xs text-gray-500">
-                  選択されたテキストを挿入するには {{text}} を使用します。
+                  選択されたテキストを挿入するには {'{{text}}'} を使用します。
                 </div>
                 <textarea
                   value={editingPrompt.content}
