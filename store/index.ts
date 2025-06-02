@@ -9,7 +9,7 @@ interface SettingsState extends Settings {
   deletePrompt: (id: string) => void;
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
-  setApiProvider: (provider: 'openai' | 'openrouter' | 'custom') => void;
+  setApiProvider: (provider: 'openai' | 'openrouter' | 'custom' | 'localllm') => void;
   setOpenaiKey: (key: string) => void;
   setOpenaiModel: (model: string) => void;
   setOpenrouterKey: (key: string) => void;
@@ -17,6 +17,9 @@ interface SettingsState extends Settings {
   setCustomEndpoint: (endpoint: string) => void;
   setCustomKey: (key: string) => void;
   setCustomModel: (model: string) => void;
+  setLocalLLMEndpoint: (endpoint: string) => void;
+  setLocalLLMKey: (key: string) => void;
+  setLocalLLMModel: (model: string) => void;
 }
 
 interface SpeechState {
@@ -64,6 +67,9 @@ const defaultSettings: Settings = {
   customEndpoint: '',
   customKey: '',
   customModel: '',
+  localllmEndpoint: 'http://localhost:8080',
+  localllmKey: '',
+  localllmModel: 'llama3',
 };
 
 // Settings store with persistence
@@ -84,10 +90,12 @@ export const useSettingsStore = create<SettingsState>()(
       setOpenaiKey: (openaiKey) => set({ openaiKey }),
       setOpenaiModel: (openaiModel) => set({ openaiModel }),
       setOpenrouterKey: (openrouterKey) => set({ openrouterKey }),
-      setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),
-      setCustomEndpoint: (customEndpoint) => set({ customEndpoint }),
+      setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),      setCustomEndpoint: (customEndpoint) => set({ customEndpoint }),
       setCustomKey: (customKey) => set({ customKey }),
       setCustomModel: (customModel) => set({ customModel }),
+      setLocalLLMEndpoint: (localllmEndpoint) => set({ localllmEndpoint }),
+      setLocalLLMKey: (localllmKey) => set({ localllmKey }),
+      setLocalLLMModel: (localllmModel) => set({ localllmModel }),
     }),
     {
       name: 'cosense-ai-settings',

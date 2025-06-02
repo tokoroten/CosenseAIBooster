@@ -62,7 +62,7 @@ README.mdにビルドの方法と簡易な使い方を書いていく
   - [x] OpenAI APIキー設定
   - [x] OpenRouter APIキー設定
   - [x] カスタムエンドポイント設定
-  - [ ] LocalLLM 接続設定（オプション）
+  - [x] LocalLLM 接続設定（オプション）
 - [x] 設定の保存と読み込み機能の実装
   - [x] Zustandストアと統合したChrome Storage API利用
   - [x] persistミドルウェアによる永続化

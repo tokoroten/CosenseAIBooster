@@ -11,7 +11,7 @@ export interface Settings {
   prompts: Prompt[];
   insertPosition: 'below' | 'bottom';
   speechLang: string;
-  apiProvider: 'openai' | 'openrouter' | 'custom';
+  apiProvider: 'openai' | 'openrouter' | 'custom' | 'localllm';
   openaiKey: string;
   openaiModel: string;
   openrouterKey: string;
@@ -19,6 +19,9 @@ export interface Settings {
   customEndpoint: string;
   customKey: string;
   customModel: string;
+  localllmEndpoint: string;
+  localllmKey: string;
+  localllmModel: string;
 }
 
 export class StorageService {
@@ -48,6 +51,9 @@ export class StorageService {
     customEndpoint: '',
     customKey: '',
     customModel: '',
+    localllmEndpoint: 'http://localhost:8080',
+    localllmKey: '',
+    localllmModel: 'llama3',
   };
 
   /**
