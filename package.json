@@ -2,7 +2,8 @@
   "name": "cosense-ai-booster",
   "version": "0.1.0",
   "description": "AI assistant for Cosense (formerly Scrapbox)",
-  "main": ".output/chrome-mv3/background.js",  "scripts": {
+  "main": ".output/chrome-mv3/background.js",
+  "scripts": {
     "build": "wxt build",
     "dev": "wxt dev",
     "serve": "wxt preview",
