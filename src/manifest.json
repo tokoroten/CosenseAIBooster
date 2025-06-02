@@ -25,10 +25,9 @@
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  },
-  "content_scripts": [
+  },  "content_scripts": [
     {
-      "matches": ["*://scrapbox.io/*"],
+      "matches": ["*://scrapbox.io/*", "*://cosen.se/*"],
       "js": ["content.js"],
       "css": []
     }
@@ -36,15 +35,14 @@
   "permissions": [
     "storage",
     "contextMenus"
-  ],
-  "host_permissions": [
+  ],  "host_permissions": [
     "*://scrapbox.io/*",
+    "*://cosen.se/*",
     "https://api.openai.com/*"
-  ],
-  "web_accessible_resources": [
+  ],  "web_accessible_resources": [
     {
       "resources": ["assets/*"],
-      "matches": ["*://scrapbox.io/*"]
+      "matches": ["*://scrapbox.io/*", "*://cosen.se/*"]
     }
   ]
 }

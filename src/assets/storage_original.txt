@@ -1,0 +1,246 @@
+export interface Prompt {
+  id: string;
+  name: string;
+  content: string;
+  model: string;
+}
+
+export interface Settings {
+  prompts: Prompt[];
+  insertPosition: 'below' | 'bottom';
+  speechLang: string;
+  apiProvider: 'openai' | 'openrouter' | 'custom';
+  openaiKey: string;
+  openaiModel: string;
+  openrouterKey: string;
+  openrouterModel: string;
+  customEndpoint: string;
+  customKey: string;
+  customModel: string;
+}
+
+export class StorageService {
+  /**
+   * 設定を初期化
+   */
+  public static async initializeSettings(): Promise<Settings> {
+    const defaultSettings: Settings = {
+      prompts: [
+        {
+          id: this.generateId(),
+          name: '要約',
+          content: '以下のテキストを要約してください:\n\n{{text}}',
+          model: 'gpt-3.5-turbo',
+        },
+        {
+          id: this.generateId(),
+          name: '翻訳（日本語→英語）',
+          content: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
+          model: 'gpt-3.5-turbo',
+        },
+      ],
+      insertPosition: 'below',
+      speechLang: 'ja-JP',
+      apiProvider: 'openai',
+      openaiKey: '',
+      openaiModel: 'gpt-3.5-turbo',
+      openrouterKey: '',
+      openrouterModel: 'openai/gpt-3.5-turbo',
+      customEndpoint: '',
+      customKey: '',
+      customModel: '',
+    };
+
+    try {
+      // Chrome Storageから設定を直接取得（getSettings()は使わない）
+      const items = await new Promise<any>((resolve) => {
+        chrome.storage.sync.get(null, (result) => {
+          if (chrome.runtime.lastError) {
+            resolve(null);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+
+      // 設定がない、または不完全な場合はデフォルト設定を保存
+      if (!items || typeof items !== 'object' || 
+          !items.prompts || !Array.isArray(items.prompts) || 
+          items.prompts.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log('Initializing with default settings');
+        await this.saveSettings(defaultSettings);
+        return defaultSettings;
+      }
+
+      // 既存の設定を使用するが、必要に応じて足りない項目を補完
+      const mergedSettings: Settings = {
+        ...defaultSettings,
+        ...items,
+        // プロンプト配列は特別処理（nullや無効な項目をフィルタリング）        prompts: Array.isArray(items.prompts) 
+          ? items.prompts.filter((p: any) => p && typeof p === 'object' && p.id && p.name && p.content)
+          : defaultSettings.prompts
+      };
+
+      // マージされた設定を保存
+      await this.saveSettings(mergedSettings);
+      return mergedSettings;
+    } catch (error) {
+      // エラー時はデフォルト設定を使用
+      // eslint-disable-next-line no-console
+      console.error('Error initializing settings:', error);
+      await this.saveSettings(defaultSettings);
+      return defaultSettings;
+    }
+  }
+  /**
+   * 設定を保存
+   */
+  public static async saveSettings(settings: Settings): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      chrome.storage.sync.set(settings, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+  
+  /**
+   * 設定を取得
+   */
+  public static async getSettings(): Promise<Settings | null> {
+    return new Promise<Settings | null>((resolve) => {
+      try {
+        chrome.storage.sync.get(null, (items) => {
+          if (chrome.runtime.lastError) {
+            // eslint-disable-next-line no-console
+            console.error('Storage error:', chrome.runtime.lastError);
+            resolve(null);
+            return;
+          }
+            // 最低限必要なプロパティを持っていない、または形式が不正な場合はデフォルト設定を作成
+          if (!items || typeof items !== 'object' || 
+              !('prompts' in items) || 
+              !Array.isArray(items.prompts)) {
+            // eslint-disable-next-line no-console
+            console.warn('Invalid settings, creating default settings');
+            
+            // 直接デフォルト設定を作成して返す（initializeSettings()を呼ばずに）
+            const defaultSettings: Settings = {
+              prompts: [
+                {
+                  id: this.generateId(),
+                  name: '要約',
+                  content: '以下のテキストを要約してください:\n\n{{text}}',
+                  model: 'gpt-3.5-turbo',
+                },
+                {
+                  id: this.generateId(),
+                  name: '翻訳（日本語→英語）',
+                  content: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
+                  model: 'gpt-3.5-turbo',
+                },
+              ],
+              insertPosition: 'below',
+              speechLang: 'ja-JP',
+              apiProvider: 'openai',
+              openaiKey: '',
+              openaiModel: 'gpt-3.5-turbo',
+              openrouterKey: '',
+              openrouterModel: 'openai/gpt-3.5-turbo',
+              customEndpoint: '',
+              customKey: '',
+              customModel: '',
+            };
+            
+            // デフォルト設定を保存してから返す
+            this.saveSettings(defaultSettings).then(() => {
+              resolve(defaultSettings);
+            }).catch(() => {
+              // 保存に失敗してもデフォルト設定を返す
+              resolve(defaultSettings);
+            });
+            return;
+          }
+          
+          // 念のため各要素を検証
+          const settings = {
+            ...items,
+            prompts: Array.isArray(items.prompts) 
+              ? items.prompts.filter(p => p && typeof p === 'object' && 'id' in p && 'name' in p)
+              : []
+          } as Settings;
+          
+          resolve(settings);
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error getting settings:', error);
+        resolve(null);
+      }
+    });
+  }
+
+  /**
+   * プロンプトを追加・更新
+   */
+  public static async savePrompt(prompt: Omit<Prompt, 'id'> & { id?: string }): Promise<Prompt> {
+    const settings = await this.getSettings();
+    if (!settings) throw new Error('Settings not found');
+
+    const prompts = settings.prompts || [];
+    const newPrompt: Prompt = {
+      id: prompt.id || this.generateId(),
+      name: prompt.name,
+      content: prompt.content,
+      model: prompt.model,
+    };
+
+    const existingPromptIndex = prompts.findIndex((p) => p.id === prompt.id);
+
+    if (existingPromptIndex >= 0) {
+      prompts[existingPromptIndex] = newPrompt;
+    } else {
+      prompts.push(newPrompt);
+    }
+
+    await this.saveSettings({
+      ...settings,
+      prompts,
+    });
+
+    return newPrompt;
+  }
+
+  /**
+   * プロンプトを削除
+   */
+  public static async deletePrompt(id: string): Promise<void> {
+    const settings = await this.getSettings();
+    if (!settings) throw new Error('Settings not found');
+
+    const prompts = settings.prompts || [];
+    const promptIndex = prompts.findIndex((p) => p.id === id);
+
+    if (promptIndex >= 0) {
+      prompts.splice(promptIndex, 1);
+
+      await this.saveSettings({
+        ...settings,
+        prompts,
+      });
+    }
+  }
+
+  /**
+   * ランダムIDの生成
+   */
+  private static generateId(): string {
+    return (
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
+  }
+}

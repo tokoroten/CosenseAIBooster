@@ -22,6 +22,10 @@ export class APIClientFactory {
     request: CompletionRequest
   ): Promise<string> {
     try {
+      if (!options || !request || !request.prompt) {
+        throw new Error('Invalid API request parameters');
+      }
+
       const messages = [
         {
           role: 'system' as const,
@@ -29,7 +33,7 @@ export class APIClientFactory {
         },
         {
           role: 'user' as const,
-          content: request.prompt.replace('{{text}}', request.selectedText),
+          content: request.prompt.replace('{{text}}', request.selectedText || ''),
         },
       ];
 

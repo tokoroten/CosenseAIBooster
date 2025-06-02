@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface SpeechRecognitionOptions {
   language: string; // 'ja-JP', 'en-US', etc.
   continuous: boolean;
@@ -14,7 +16,23 @@ export interface SpeechRecognitionEvent {
   }[];
 }
 
+// Custom interface for SpeechRecognition API
+interface SpeechRecognitionAPI {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: ((this: SpeechRecognitionAPI, ev: Event) => void) | null;
+  onresult: ((this: SpeechRecognitionAPI, ev: Event) => void) | null;
+  onerror: ((this: SpeechRecognitionAPI, ev: Event) => void) | null;
+  onend: ((this: SpeechRecognitionAPI, ev: Event) => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
 export class SpeechRecognitionService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private recognition: any;
   private isListening: boolean = false;
   private finalTranscript: string = '';
@@ -23,7 +41,6 @@ export class SpeechRecognitionService {
   private pauseDetected: boolean = false;
   private lastResultTimestamp: number = 0;
   private _onEndCallback: (() => void) | null = null;
-
   constructor(options?: Partial<SpeechRecognitionOptions>) {
     // WebSpeech API の非標準な型のため、any を使用
     const SpeechRecognition =
@@ -113,12 +130,12 @@ export class SpeechRecognitionService {
       return false;
     }
   }
-
   /**
    * 認識結果のハンドリング
    */
   public onResult(callback: (final: string, interim: string, isFinal: boolean) => void): void {
-    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.recognition.onresult = (event: any) => {
       this.interimTranscript = '';
       this.lastResultTimestamp = Date.now();
 

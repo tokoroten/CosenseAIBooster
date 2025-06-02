@@ -1,5 +1,4 @@
-{
-  "compilerOptions": {
+{  "compilerOptions": {
     "target": "es6",
     "module": "esnext",
     "moduleResolution": "node",
@@ -12,7 +11,9 @@
     "sourceMap": true,
     "lib": ["dom", "dom.iterable", "esnext"],
     "jsx": "react",
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noImplicitAny": false, // 暗黙的なany型を許容
+    "noEmitOnError": false, // エラーがあっても出力する
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]

@@ -3,6 +3,7 @@
  */
 import { SpeechRecognitionService } from '../utils/speech-recognition';
 import { CosenseDOMUtils } from '../utils/cosense-dom';
+import { CosensePopupMenuManager } from '../utils/cosense-popup-menu';
 import { StorageService } from '../utils/storage';
 
 // 状態管理
@@ -109,6 +110,9 @@ function onDOMContentLoaded(): void {
 
   // メッセージリスナーの設定
   setupMessageListeners();
+  
+  // テキスト選択時のポップアップメニュー拡張を初期化
+  initializeSelectionPopupMenu();
 }
 
 /**
@@ -378,6 +382,318 @@ function hideProcessingStatus(promptId: string, success: boolean = true): void {
 }
 
 /**
+ * ポップアップメニューの初期化
+ */
+function initializePopupMenu(): void {
+  CosensePopupMenuManager.initialize();
+
+  // プロンプトを適用するボタンの追加
+  StorageService.getPrompts().then((prompts) => {
+    if (prompts.length > 0) {
+      // デフォルトプロンプトを追加
+      const defaultPrompt = prompts[0];
+      CosensePopupMenuManager.addButton({
+        id: 'cosense-ai-apply-prompt',
+        label: `AIで処理: ${defaultPrompt.name}`,
+        className: 'cosense-ai-prompt-button',
+        onClick: (selectedText) => {
+          if (selectedText) {
+            // プロンプト適用処理
+            processSelectedText(selectedText, defaultPrompt.id);
+          }
+        }
+      });
+    }
+
+    // すべてのプロンプトボタンを追加
+    CosensePopupMenuManager.addButton({
+      id: 'cosense-ai-all-prompts',
+      label: 'AIで処理...',
+      className: 'cosense-ai-all-prompts-button',
+      onClick: (selectedText) => {
+        if (selectedText) {
+          // プロンプト選択メニューを表示
+          showPromptSelectionMenu(selectedText);
+        }
+      }
+    });
+  });
+
+  // ポップアップメニューのスタイルを追加
+  const popupStyle = document.createElement('style');
+  popupStyle.textContent = `
+    .cosense-ai-prompt-button {
+      background-color: #f4f4f8;
+    }
+    .cosense-ai-all-prompts-button {
+      background-color: #e8f0fe;
+    }
+    .button.cosense-ai-prompt-button:hover,
+    .button.cosense-ai-all-prompts-button:hover {
+      background-color: #e2e2e8;
+    }
+  `;
+  document.head.appendChild(popupStyle);
+}
+
+/**
+ * プロンプト選択メニューを表示
+ */
+function showPromptSelectionMenu(selectedText: string): void {
+  // プロンプト一覧を取得
+  StorageService.getPrompts().then(prompts => {
+    // プロンプト選択用のモーダルを作成
+    const modal = document.createElement('div');
+    modal.className = 'cosense-ai-prompt-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '50%';
+    modal.style.left = '50%';
+    modal.style.transform = 'translate(-50%, -50%)';
+    modal.style.background = 'white';
+    modal.style.padding = '20px';
+    modal.style.borderRadius = '8px';
+    modal.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.15)';
+    modal.style.zIndex = '10000';
+    modal.style.maxWidth = '400px';
+    modal.style.width = '100%';
+
+    // タイトル
+    const title = document.createElement('h3');
+    title.textContent = 'プロンプトを選択';
+    title.style.margin = '0 0 15px 0';
+    modal.appendChild(title);
+
+    // プロンプト一覧
+    const list = document.createElement('div');
+    list.style.maxHeight = '300px';
+    list.style.overflowY = 'auto';
+    
+    prompts.forEach(prompt => {
+      const item = document.createElement('div');
+      item.textContent = prompt.name;
+      item.style.padding = '10px';
+      item.style.margin = '5px 0';
+      item.style.borderRadius = '4px';
+      item.style.cursor = 'pointer';
+      item.style.backgroundColor = '#f4f4f8';
+      
+      item.addEventListener('mouseover', () => {
+        item.style.backgroundColor = '#e2e2e8';
+      });
+      
+      item.addEventListener('mouseout', () => {
+        item.style.backgroundColor = '#f4f4f8';
+      });
+      
+      item.addEventListener('click', () => {
+        // 選択されたプロンプトを適用
+        processSelectedText(selectedText, prompt.id);
+        // モーダルを閉じる
+        document.body.removeChild(modal);
+        document.body.removeChild(overlay);
+      });
+      
+      list.appendChild(item);
+    });
+    
+    modal.appendChild(list);
+
+    // キャンセルボタン
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'キャンセル';
+    cancelBtn.style.marginTop = '15px';
+    cancelBtn.style.padding = '8px 12px';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.borderRadius = '4px';
+    cancelBtn.style.backgroundColor = '#f0f0f0';
+    cancelBtn.style.cursor = 'pointer';
+    
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+      document.body.removeChild(overlay);
+    });
+    
+    modal.appendChild(cancelBtn);
+
+    // 背景オーバーレイ
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    overlay.style.zIndex = '9999';
+    
+    overlay.addEventListener('click', () => {
+      document.body.removeChild(modal);
+      document.body.removeChild(overlay);
+    });
+
+    // DOMに追加
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+  });
+}
+
+/**
+ * テキスト選択時のポップアップメニュー拡張を初期化
+ */
+function initializeSelectionPopupMenu(): void {
+  // ポップアップメニューの初期化
+  CosensePopupMenuManager.initialize();
+  
+  // ポップアップメニュースタイルの追加
+  const style = document.createElement('style');
+  style.textContent = `
+    .button.cosense-ai-button {
+      background-color: #e8f0fe;
+    }
+    .button.cosense-ai-button:hover {
+      background-color: #d2e3fc;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // プロンプト一覧を取得してAI処理ボタンを追加
+  StorageService.getPrompts().then((prompts) => {
+    if (prompts.length > 0) {
+      // AIで処理ボタンを追加
+      CosensePopupMenuManager.addButton({
+        id: 'cosense-ai-process',
+        label: `AIで処理`,
+        className: 'cosense-ai-button',
+        onClick: (selectedText) => {
+          if (selectedText) {
+            // プロンプト選択メニューを表示
+            showPromptSelectionDialog(selectedText);
+          }
+        }
+      });
+    }
+  }).catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize popup menu:', error);
+  });
+}
+
+/**
+ * プロンプト選択ダイアログを表示
+ */
+function showPromptSelectionDialog(selectedText: string): void {
+  // 既存のダイアログがあれば削除
+  const existingDialog = document.querySelector('.cosense-ai-dialog');
+  if (existingDialog) {
+    existingDialog.remove();
+  }
+  
+  // ダイアログ背景を作成
+  const overlay = document.createElement('div');
+  overlay.className = 'cosense-ai-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
+  overlay.style.zIndex = '10000';
+  overlay.style.display = 'flex';
+  overlay.style.justifyContent = 'center';
+  overlay.style.alignItems = 'center';
+  
+  // ダイアログ本体を作成
+  const dialog = document.createElement('div');
+  dialog.className = 'cosense-ai-dialog';
+  dialog.style.backgroundColor = '#fff';
+  dialog.style.padding = '20px';
+  dialog.style.borderRadius = '8px';
+  dialog.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+  dialog.style.maxWidth = '400px';
+  dialog.style.width = '100%';
+  dialog.style.maxHeight = '80vh';
+  dialog.style.overflow = 'auto';
+  
+  // タイトル
+  const title = document.createElement('h3');
+  title.textContent = 'AIで処理';
+  title.style.margin = '0 0 15px';
+  title.style.fontSize = '18px';
+  dialog.appendChild(title);
+  
+  // プロンプト一覧を取得
+  StorageService.getPrompts().then((prompts) => {
+    if (prompts.length === 0) {
+      const emptyMessage = document.createElement('p');
+      emptyMessage.textContent = 'プロンプトが設定されていません。拡張機能の設定から追加してください。';
+      emptyMessage.style.margin = '10px 0';
+      dialog.appendChild(emptyMessage);
+    } else {
+      // プロンプト選択リスト
+      const list = document.createElement('div');
+      
+      prompts.forEach((prompt) => {
+        const item = document.createElement('div');
+        item.textContent = prompt.name;
+        item.style.padding = '10px 15px';
+        item.style.margin = '5px 0';
+        item.style.borderRadius = '4px';
+        item.style.backgroundColor = '#f5f7fa';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'background-color 0.2s';
+        
+        item.addEventListener('mouseover', () => {
+          item.style.backgroundColor = '#e8f0fe';
+        });
+        
+        item.addEventListener('mouseout', () => {
+          item.style.backgroundColor = '#f5f7fa';
+        });
+        
+        item.addEventListener('click', () => {
+          overlay.remove();
+          processSelectedText(selectedText, prompt.id);
+        });
+        
+        list.appendChild(item);
+      });
+      
+      dialog.appendChild(list);
+    }
+    
+    // キャンセルボタン
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.marginTop = '20px';
+    buttonContainer.style.textAlign = 'right';
+    
+    const cancelButton = document.createElement('button');
+    cancelButton.textContent = 'キャンセル';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.backgroundColor = '#f5f5f5';
+    cancelButton.style.border = 'none';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.cursor = 'pointer';
+    
+    cancelButton.addEventListener('click', () => {
+      overlay.remove();
+    });
+    
+    buttonContainer.appendChild(cancelButton);
+    dialog.appendChild(buttonContainer);
+    
+    // ダイアログを表示
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // 背景クリックでダイアログを閉じる
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        overlay.remove();
+      }
+    });
+  });
+}
+
+/**
  * メッセージリスナーの設定
  */
 function setupMessageListeners(): void {
@@ -437,4 +753,54 @@ function handleShowError(data: { message: string; promptId: string }): void {
   const { message, promptId } = data;
   hideProcessingStatus(promptId, false);
   showStatus(`エラー: ${message}`, 'error');
+}
+
+/**
+ * 選択されたテキストをプロンプトで処理する
+ */
+function processSelectedText(selectedText: string, promptId: string): void {
+  // 処理中ステータスを表示
+  showProcessingStatus(promptId);
+
+  // 設定を取得
+  StorageService.getSettings().then((settings) => {
+    if (!settings) {
+      hideProcessingStatus(promptId, false);
+      showStatus('設定の取得に失敗しました', 'error');
+      return;
+    }
+
+    // プロンプトを検索
+    const prompt = settings.prompts.find((p) => p.id === promptId);
+    if (!prompt) {
+      hideProcessingStatus(promptId, false);
+      showStatus('プロンプトが見つかりません', 'error');
+      return;
+    }
+
+    // バックグラウンドスクリプトにプロンプト処理を依頼
+    chrome.runtime.sendMessage(
+      {
+        action: 'processPrompt',
+        data: {
+          text: selectedText,
+          promptId: prompt.id,
+          promptContent: prompt.content,
+          model: prompt.model,
+          insertPosition: settings.insertPosition,
+        },
+      },
+      (response) => {
+        if (!response || !response.success) {
+          hideProcessingStatus(promptId, false);
+          showStatus('処理リクエストの送信に失敗しました', 'error');
+        }
+      }
+    );
+  }).catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error('Error processing text:', error);
+    hideProcessingStatus(promptId, false);
+    showStatus('エラーが発生しました', 'error');
+  });
 }

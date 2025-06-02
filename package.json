@@ -8,7 +8,8 @@
     "dev": "webpack --config webpack.config.js --watch",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "prettier --write 'src/**/*.{ts,tsx,css,html}'",
-    "test": "jest"
+    "test": "jest",
+    "package": "npm run build && node scripts/package.js"
   },
   "keywords": [
     "chrome-extension",
@@ -20,11 +21,13 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
     "@types/chrome": "^0.0.246",
     "@types/jest": "^29.5.5",
     "@types/node": "^18.18.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
+    "archiver": "^7.0.1",
     "autoprefixer": "^10.4.21",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
