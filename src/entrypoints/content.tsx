@@ -194,7 +194,7 @@ const ContentApp: React.FC = () => {
         id: 'cosense-mic-btn',
         ariaLabel: '音声入力',
         icon: '<span style="font-size:16px;">🎤</span>',
-        className: isListening ? 'bg-red-500' : '',
+        className: '',
         onClick: () => {
           if (!recognition) {
             const lang = useSettingsStore.getState().speechLang || 'ja-JP';
@@ -205,22 +205,7 @@ const ContentApp: React.FC = () => {
             });
             recognition.onResult((text, isFinal) => {
               const textInput = document.getElementById('text-input') as HTMLTextAreaElement | null;
-              if (!textInput) return;
-              // カーソル位置・行番号・列番号を計算
-              const value = textInput.value;
-              const selectionStart = textInput.selectionStart ?? 0;
-              // 前方のテキストを行ごとに分割
-              const lines = value.slice(0, selectionStart).split('\n');
-              const lineIndex = lines.length - 1;
-              const colIndex = lines[lines.length - 1].length;
-              // 行高を推定（textareaのfont-sizeから計算 or 固定値）
-              const style = window.getComputedStyle(textInput);
-              const fontSize = parseFloat(style.fontSize || '16');
-              const lineHeight = parseFloat(style.lineHeight || (fontSize * 1.5).toString());
-              // textareaの位置
-              const rect = textInput.getBoundingClientRect();
-              // textarea親にposition:relativeを付与
-              if (textInput.parentElement) {
+              if (textInput && textInput.parentElement) {
                 textInput.parentElement.style.position = 'relative';
               }
               if (!overlay) {
@@ -233,61 +218,83 @@ const ContentApp: React.FC = () => {
                 overlay.style.background = 'rgba(255,255,255,0.8)';
                 overlay.style.border = '1px solid #aaa';
                 overlay.style.borderRadius = '4px';
-                overlay.style.padding = '2px 6px';
-                overlay.style.fontSize = style.fontSize;
-                overlay.style.fontFamily = style.fontFamily;
-                textInput.parentElement?.appendChild(overlay);
+                overlay.style.padding = '6px 6px';
+                if (textInput) {
+                  const computed = window.getComputedStyle(textInput);
+                  overlay.style.fontSize = computed.fontSize;
+                  overlay.style.fontFamily = computed.fontFamily;
+                }
+                textInput?.parentElement?.appendChild(overlay);
               }
               // .cursor要素の座標を取得してオーバーレイを配置
               const cursorElem = document.querySelector('.cursor') as HTMLDivElement | null;
-              if (cursorElem) {
-                const cursorRect = cursorElem.getBoundingClientRect();
-                overlay.style.position = 'fixed';
-                overlay.style.top = `${cursorRect.top}px`;
-                overlay.style.left = `${cursorRect.left}px`;
-                overlay.style.minWidth = '32px';
-                overlay.style.maxWidth = '40vw';
-                overlay.style.height = 'auto';
-                overlay.style.lineHeight = `${cursorRect.height > 0 ? cursorRect.height : lineHeight}px`;
-                overlay.style.whiteSpace = 'pre';
-                overlay.style.display = 'block';
-                overlay.style.overflow = 'visible';
-                overlay.style.background = 'rgba(255,255,255,0.95)';
-                overlay.style.border = '1px solid #aaa';
-                overlay.style.borderRadius = '4px';
-                overlay.style.padding = '2px 8px';
-                overlay.style.fontSize = style.fontSize;
-                overlay.style.fontFamily = style.fontFamily;
-                overlay.style.zIndex = '9999';
-                overlay.style.pointerEvents = 'none';
-                overlay.textContent = text;
-                lastOverlayText = text;
-              } else {
-                // fallback: textarea上のカーソル行・位置に重ねて表示
-                overlay.style.position = 'absolute';
-                overlay.style.top = `${rect.top + window.scrollY + lineIndex * lineHeight}px`;
-                overlay.style.left = `${rect.left + window.scrollX}px`;
-                overlay.style.width = `${rect.width}px`;
-                overlay.style.height = `${lineHeight}px`;
-                overlay.style.whiteSpace = 'pre';
-                overlay.style.display = 'block';
-                overlay.style.overflow = 'hidden';
-                let paddingLeft = 0;
-                if (colIndex > 0) {
-                  const span = document.createElement('span');
-                  span.style.visibility = 'hidden';
-                  span.style.position = 'absolute';
-                  span.style.fontSize = style.fontSize;
-                  span.style.fontFamily = style.fontFamily;
-                  span.textContent = lines[lines.length - 1];
-                  document.body.appendChild(span);
-                  paddingLeft = span.getBoundingClientRect().width;
-                  document.body.removeChild(span);
-                }
-                overlay.style.paddingLeft = `${paddingLeft + 6}px`;
-                overlay.textContent = text;
-                lastOverlayText = text;
+              let overlayLeft = 0;
+              let overlayTop = 0;
+              let overlayWidth = 0;
+              let overlayHeight = 0;
+              let overlayFontSize = '16px';
+              let overlayFontFamily = 'monospace';
+              if (textInput) {
+                const computed = window.getComputedStyle(textInput);
+                overlayFontSize = computed.fontSize;
+                overlayFontFamily = computed.fontFamily;
               }
+              if (cursorElem && cursorElem.getBoundingClientRect().width > 0 && cursorElem.getBoundingClientRect().height > 0) {
+                const cursorRect = cursorElem.getBoundingClientRect();
+                overlayTop = cursorRect.top;
+                overlayLeft = cursorRect.left;
+                overlayHeight = cursorRect.height > 0 ? cursorRect.height : 20;
+                overlayWidth = 0; // widthはauto
+              } else if (textInput) {
+                // キャレットがない場合はtextareaの中央に表示
+                const rect = textInput.getBoundingClientRect();
+                overlayTop = rect.top + rect.height / 2 - 20;
+                overlayLeft = rect.left + rect.width / 2 - 100;
+                overlayHeight = 40;
+                overlayWidth = 200;
+              } else {
+                // どちらもなければ画面中央
+                overlayTop = window.innerHeight / 2 - 20;
+                overlayLeft = window.innerWidth / 2 - 100;
+                overlayHeight = 40;
+                overlayWidth = 200;
+              }
+              // 右端はみ出し防止
+              const maxWidth = Math.min(400, window.innerWidth * 0.8);
+              overlay.style.position = 'fixed';
+              overlay.style.top = `${Math.max(0, overlayTop)}px`;
+              // 右端で貫通しないように調整
+              let left = overlayLeft;
+              if (overlayWidth > 0) {
+                if (left + overlayWidth > window.innerWidth - 8) {
+                  left = window.innerWidth - overlayWidth - 8;
+                }
+              } else {
+                // width:autoの場合はmaxWidthで調整
+                if (left + maxWidth > window.innerWidth - 8) {
+                  left = window.innerWidth - maxWidth - 8;
+                }
+              }
+              overlay.style.left = `${Math.max(0, left)}px`;
+              overlay.style.minWidth = '32px';
+              overlay.style.maxWidth = `${maxWidth}px`;
+              overlay.style.height = `${overlayHeight}px`;
+              overlay.style.lineHeight = `${overlayHeight}px`;
+              overlay.style.whiteSpace = 'pre-wrap';
+              overlay.style.wordBreak = 'break-word';
+              overlay.style.display = 'block';
+              overlay.style.overflow = 'visible';
+              overlay.style.background = 'rgba(255,255,255,0.95)';
+              overlay.style.border = '1px solid #aaa';
+              overlay.style.borderRadius = '4px';
+              overlay.style.padding = '2px 8px';
+              overlay.style.fontSize = overlayFontSize;
+              overlay.style.fontFamily = overlayFontFamily;
+              overlay.style.zIndex = '9999';
+              overlay.style.pointerEvents = 'none';
+              overlay.textContent = text;
+              lastOverlayText = text;
+              overlay.style.visibility = 'visible';
               if (isFinal) {
                 // 確定時に挿入
                 const domUtils = new CosenseDOMUtils();
@@ -299,7 +306,10 @@ const ContentApp: React.FC = () => {
             });
             recognition.onEnd(() => {
               isListening = false;
-              if (micBtn) micBtn.classList.remove('bg-red-500');
+              if (micBtn) {
+                micBtn.classList.remove('bg-red-500');
+                micBtn.style.background = '';
+              }
               overlay?.remove();
               overlay = null;
             });
@@ -307,19 +317,25 @@ const ContentApp: React.FC = () => {
           if (!isListening) {
             recognition.start();
             isListening = true;
-            if (micBtn) micBtn.classList.add('bg-red-500');
+            if (micBtn) {
+              micBtn.classList.add('bg-red-500');
+              micBtn.style.background = '#ff8888'; // 柔らかい赤色
+            }
           } else {
             recognition.stop();
             isListening = false;
-            if (micBtn) micBtn.classList.remove('bg-red-500');
+            if (micBtn) {
+              micBtn.classList.remove('bg-red-500');
+              micBtn.style.background = '';
+            }
           }
-        },
+        }
       });
     };
     const micInterval = setInterval(setupMicButton, 1000);
+
     return () => {
       clearInterval(interval);
-      disconnect();
       unsub();
       clearInterval(micInterval);
       overlay?.remove();
