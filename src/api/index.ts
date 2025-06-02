@@ -40,7 +40,7 @@ export class APIClientFactory {
       model: options.model,
       messages,
       temperature: request.temperature,
-      max_tokens: request.maxTokens,
+      max_completion_tokens: request.maxTokens,
     });
   }
 }

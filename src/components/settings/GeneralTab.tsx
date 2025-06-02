@@ -1,0 +1,64 @@
+import React from 'react';
+import { useSettingsStore } from '../../store';
+
+const GeneralTab: React.FC = () => {
+  const { insertPosition, speechLang, setInsertPosition, setSpeechLang } = useSettingsStore();
+
+  return (
+    <div className="p-4 space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">テキスト挿入位置</h3>
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center">
+            <input
+              id="insert-below"
+              type="radio"
+              checked={insertPosition === 'below'}
+              onChange={() => setInsertPosition('below')}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="insert-below" className="ml-3 block text-sm text-gray-700">
+              選択範囲の下に挿入
+            </label>
+          </div>
+          <div className="flex items-center">
+            <input
+              id="insert-bottom"
+              type="radio"
+              checked={insertPosition === 'bottom'}
+              onChange={() => setInsertPosition('bottom')}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="insert-bottom" className="ml-3 block text-sm text-gray-700">
+              ページの最下部に挿入
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium">音声入力設定</h3>
+        <div className="mt-2">
+          <label htmlFor="speech-lang" className="block text-sm text-gray-700">
+            言語
+          </label>
+          <select
+            id="speech-lang"
+            value={speechLang}
+            onChange={(e) => setSpeechLang(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          >
+            <option value="ja-JP">日本語 (ja-JP)</option>
+            <option value="en-US">英語 (en-US)</option>
+            <option value="zh-CN">中国語 (zh-CN)</option>
+            <option value="ko-KR">韓国語 (ko-KR)</option>
+            <option value="fr-FR">フランス語 (fr-FR)</option>
+            <option value="de-DE">ドイツ語 (de-DE)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GeneralTab;

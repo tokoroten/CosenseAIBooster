@@ -30,51 +30,51 @@ export class FrontendAPIService {
   static async processPrompt(promptId: string, selectedText: string): Promise<PromptProcessResult> {
     try {
       console.log(`プロンプト処理を開始: ID=${promptId}, テキスト長=${selectedText.length}文字`);
-      
+
       // バックグラウンドスクリプトにメッセージを送信
       const response = await browser.runtime.sendMessage({
         type: 'PROCESS_PROMPT',
         promptId,
-        selectedText
+        selectedText,
       });
-      
+
       // レスポンスの確認
       if (!response || !response.success) {
         console.error('プロンプト処理エラー:', response?.error);
         throw new Error(response?.error || 'バックグラウンドからの応答がありません');
       }
-      
+
       console.log('プロンプト処理完了:', response.promptName);
-      
+
       return {
         result: response.result,
         promptName: response.promptName || '',
-        insertPosition: response.insertPosition || 'below'
+        insertPosition: response.insertPosition || 'below',
       };
     } catch (error) {
       console.error('プロンプト処理例外:', error);
       throw error;
     }
   }
-  
+
   /**
    * フロントエンド用の設定データを取得する
    */
   static async getFrontendSettings(): Promise<FrontendSettings | null> {
     try {
       console.log('バックグラウンドから設定を取得中...');
-      
+
       // バックグラウンドスクリプトにメッセージを送信
       const response = await browser.runtime.sendMessage({
-        type: 'GET_FRONTEND_SETTINGS'
+        type: 'GET_FRONTEND_SETTINGS',
       });
-      
+
       // レスポンスの確認
       if (!response || !response.success) {
         console.warn('設定の取得に失敗しました:', response?.error);
         return null;
       }
-      
+
       console.log('フロントエンド設定の取得が完了しました');
       return response.frontendSettings;
     } catch (error) {

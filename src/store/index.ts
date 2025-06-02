@@ -7,6 +7,7 @@ interface SettingsState extends Settings {
   addPrompt: (prompt: Prompt) => void;
   updatePrompt: (prompt: Prompt) => void;
   deletePrompt: (id: string) => void;
+  addDefaultPrompts: () => void; // デフォルトのプロンプトを追加するメソッド
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
   setApiProvider: (provider: 'openai' | 'openrouter') => void;
@@ -42,28 +43,35 @@ const defaultSettings: Settings = {
       id: 'default-summary',
       name: '要約',
       systemPrompt: 'あなたは与えられたテキストを要約してください',
-      model: 'o4-mini',
+      model: 'gpt-4o-mini',
     },
     {
-      id: 'default-summary',
+      id: 'default-speech-format',
       name: '音声認識成形',
-      systemPrompt: 'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする\n\n以下のテキストを整形してください:\n\n{{text}}',
-      model: 'o4-mini',
+      systemPrompt:
+        'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする\n\n以下のテキストを整形してください:\n\n{{text}}',
+      model: 'gpt-4o-mini',
     },
     {
       id: 'default-translate-ja-en',
-      name: '翻訳（日→英）',
+      name: '翻訳（英）',
       systemPrompt: 'あなたは与えられたテキストを英語に翻訳してください',
-      model: 'o4-mini',
+      model: 'gpt-4o-mini',
     },
-
-  ],  insertPosition: 'below',
+    {
+      id: 'default-translate-en-ja',
+      name: '翻訳（日）',
+      systemPrompt: 'あなたは与えられたテキストを日本語に翻訳してください',
+      model: 'gpt-4o-mini',
+    },
+  ],
+  insertPosition: 'below',
   speechLang: 'ja-JP',
   apiProvider: 'openai',
   openaiKey: '',
   openaiModel: 'gpt-3.5-turbo',
   openrouterKey: '',
-  openrouterModel: 'openai/gpt-3.5-turbo'
+  openrouterModel: 'openai/gpt-3.5-turbo',
 };
 
 // カスタムChromeストレージの実装をインポート
@@ -81,6 +89,30 @@ export const useSettingsStore = create<SettingsState>()(
           prompts: state.prompts.map((p) => (p.id === prompt.id ? prompt : p)),
         })),
       deletePrompt: (id) => set((state) => ({ prompts: state.prompts.filter((p) => p.id !== id) })),
+      // デフォルトのプロンプトを追加する（存在しない場合のみ）
+      addDefaultPrompts: () =>
+        set((state) => {
+          // 追加するデフォルトプロンプト
+          const promptsToAdd = defaultSettings.prompts
+            .filter((defaultPrompt) => {
+              // 既に同じ名前と内容のプロンプトが存在するかチェック
+              return !state.prompts.some(
+                (existingPrompt) =>
+                  // 名前とシステムプロンプトの内容が同じなら重複と見なす
+                  existingPrompt.name === defaultPrompt.name &&
+                  existingPrompt.systemPrompt === defaultPrompt.systemPrompt
+              );
+            })
+            .map((prompt) => ({
+              ...prompt,
+              id: `default-${Date.now()}-${prompt.id}`, // 重複IDを避けるためにタイムスタンプを追加
+            }));
+
+          // 追加するプロンプトがある場合のみ配列を更新
+          return {
+            prompts: [...state.prompts, ...promptsToAdd],
+          };
+        }),
       setInsertPosition: (insertPosition) => set({ insertPosition }),
       setSpeechLang: (speechLang) => set({ speechLang }),
       setApiProvider: (apiProvider) => set({ apiProvider }),

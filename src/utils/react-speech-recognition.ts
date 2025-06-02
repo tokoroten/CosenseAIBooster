@@ -36,42 +36,41 @@ export class SpeechRecognitionService {
   private endCallback: (() => void) | null = null;
   private pauseDetectionTimer: number | null = null;
   private pauseTimeout: number = 2000; // 2 seconds of silence to detect a pause
-  
+
   constructor(options?: SpeechRecognitionOptions) {
     // Get the SpeechRecognition constructor (browser-specific)
-    const SpeechRecognition = 
-      window.SpeechRecognition || 
-      window.webkitSpeechRecognition;
-      
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (!SpeechRecognition) {
       throw new Error('Speech Recognition is not supported in this browser.');
     }
-    
+
     // Create a new SpeechRecognition instance
     this.recognition = new SpeechRecognition();
-    
+
     // Set options
     this.recognition.lang = options?.language || 'ja-JP';
     this.recognition.continuous = options?.continuous !== undefined ? options.continuous : true;
-    this.recognition.interimResults = options?.interimResults !== undefined ? options.interimResults : true;
+    this.recognition.interimResults =
+      options?.interimResults !== undefined ? options.interimResults : true;
     this.recognition.maxAlternatives = 1;
-    
+
     // Set up event handlers
     this.setupEventHandlers();
   }
-  
+
   /**
    * Set up event handlers for the SpeechRecognition API
    */
   private setupEventHandlers(): void {
     if (!this.recognition) return;
-    
+
     this.recognition.onstart = () => {
       this.isListening = true;
       this.finalTranscript = '';
       this.interimTranscript = '';
     };
-    
+
     this.recognition.onresult = (event: any) => {
       this.interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -92,20 +91,20 @@ export class SpeechRecognitionService {
       }
       this.resetPauseDetection();
     };
-    
+
     this.recognition.onerror = (event: any) => {
       console.error('Speech Recognition Error:', event.error);
       this.isListening = false;
-      
+
       // Call the end callback
       if (this.endCallback) {
         this.endCallback();
       }
     };
-    
+
     this.recognition.onend = () => {
       this.isListening = false;
-      
+
       // Auto-restart if we were still listening
       // This is needed because the SpeechRecognition API will stop after a while
       if (this.isListening) {
@@ -115,7 +114,7 @@ export class SpeechRecognitionService {
       }
     };
   }
-  
+
   /**
    * Reset the pause detection timer
    */
@@ -138,7 +137,7 @@ export class SpeechRecognitionService {
       }
     }, this.pauseTimeout);
   }
-  
+
   /**
    * Start listening
    */
@@ -149,7 +148,7 @@ export class SpeechRecognitionService {
       this.resetPauseDetection();
     }
   }
-  
+
   /**
    * Stop listening
    */
@@ -163,7 +162,7 @@ export class SpeechRecognitionService {
       this.recognition.stop();
     }
   }
-  
+
   /**
    * Set the callback for speech recognition results
    * @param callback Function to call with the recognized text
@@ -171,7 +170,7 @@ export class SpeechRecognitionService {
   onResult(callback: (text: string, isFinal: boolean) => void): void {
     this.resultCallback = callback;
   }
-  
+
   /**
    * Set the callback for when speech recognition ends
    * @param callback Function to call when speech recognition ends
@@ -179,7 +178,7 @@ export class SpeechRecognitionService {
   onEnd(callback: () => void): void {
     this.endCallback = callback;
   }
-  
+
   /**
    * Check if the service is currently listening
    */

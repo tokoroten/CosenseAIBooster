@@ -5,7 +5,8 @@ import { browser } from 'wxt/browser';
 import SettingsPanel from '../../components/SettingsPanel';
 
 const Popup: React.FC = () => {
-  const [status, setStatus] = useState<'loading' | 'active' | 'inactive'>('loading');  const [showSettings, setShowSettings] = useState(false);
+  const [status, setStatus] = useState<'loading' | 'active' | 'inactive'>('loading');
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     // Check if the content script is active in the current tab
@@ -15,24 +16,24 @@ const Popup: React.FC = () => {
         setStatus('inactive');
         return;
       }
-      
+
       // Try to send a message to the content script
       try {
-        browser.tabs.sendMessage(
-          currentTab.id,
-          { action: 'contentScriptStatus' }
-        ).then((response) => {
-          // If there's no response, the content script is not active
-          if (!response) {
+        browser.tabs
+          .sendMessage(currentTab.id, { action: 'contentScriptStatus' })
+          .then((response) => {
+            // If there's no response, the content script is not active
+            if (!response) {
+              setStatus('inactive');
+              return;
+            }
+
+            // Content script is active
+            setStatus('active');
+          })
+          .catch(() => {
             setStatus('inactive');
-            return;
-          }
-          
-          // Content script is active
-          setStatus('active');
-        }).catch(() => {
-          setStatus('inactive');
-        });
+          });
       } catch (error) {
         setStatus('inactive');
       }
@@ -42,14 +43,23 @@ const Popup: React.FC = () => {
     setShowSettings(!showSettings);
   };
   return (
-    <div className="p-4 bg-white text-gray-800" style={{ width: '360px', maxHeight: '600px', overflowY: 'auto' }}>
+    <div
+      className="p-4 bg-white text-gray-800"
+      style={{ width: '360px', maxHeight: '600px', overflowY: 'auto' }}
+    >
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold">Cosense AI Booster</h1>
-        <div className={`h-2 w-2 rounded-full ${
-          status === 'active' ? 'bg-green-500' : status === 'inactive' ? 'bg-red-500' : 'bg-yellow-500'
-        }`}></div>
+        <div
+          className={`h-2 w-2 rounded-full ${
+            status === 'active'
+              ? 'bg-green-500'
+              : status === 'inactive'
+                ? 'bg-red-500'
+                : 'bg-yellow-500'
+          }`}
+        ></div>
       </div>
-      
+
       {!showSettings ? (
         <>
           {status === 'active' ? (
@@ -72,8 +82,8 @@ const Popup: React.FC = () => {
           ) : (
             <p className="text-sm text-gray-600 mb-3">ステータスを確認中...</p>
           )}
-          
-          <button 
+
+          <button
             onClick={toggleSettings}
             className="block w-full py-2 px-3 mt-4 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
           >
@@ -81,11 +91,12 @@ const Popup: React.FC = () => {
           </button>
         </>
       ) : (
-        <>          <div className="bg-white rounded-lg">
+        <>
+          {' '}
+          <div className="bg-white rounded-lg">
             <SettingsPanel isPopup={true} />
           </div>
-          
-          <button 
+          <button
             onClick={toggleSettings}
             className="block w-full py-2 px-3 mt-4 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm"
           >

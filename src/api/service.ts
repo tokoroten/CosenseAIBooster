@@ -42,7 +42,7 @@ export class APIService {
     console.log('Current API settings:', {
       provider: state.apiProvider,
       openaiKey: state.openaiKey ? state.openaiKey.slice(0, 4) + '...' : '未設定',
-      openrouterKey: state.openrouterKey ? state.openrouterKey.slice(0, 4) + '...' : '未設定'
+      openrouterKey: state.openrouterKey ? state.openrouterKey.slice(0, 4) + '...' : '未設定',
     });
 
     // Based on the selected provider, return the appropriate options
@@ -70,7 +70,7 @@ export class APIService {
           apiKey: openrouterKey,
           model: state.openrouterModel,
         };
-        
+
       default:
         throw new Error(`サポートされていないAPIプロバイダー: ${state.apiProvider}`);
     }
@@ -82,19 +82,19 @@ export class APIService {
    */
   static async getOptionsFromStoreAsync(): Promise<APIClientOptions> {
     const browser = (globalThis as any).browser || (globalThis as any).chrome;
-    
+
     return new Promise<APIClientOptions>((resolve, reject) => {
       try {
         browser.storage.local.get(['cosense-ai-settings'], (result) => {
           let apiProvider = 'openai';
           let apiKey = '';
           let model = 'gpt-3.5-turbo';
-          
+
           // ストレージから設定を取得
           if (result && result['cosense-ai-settings']) {
             const settings = JSON.parse(result['cosense-ai-settings']);
             apiProvider = settings.state?.apiProvider || apiProvider;
-            
+
             if (apiProvider === 'openai') {
               apiKey = settings.state?.openaiKey || '';
               model = settings.state?.openaiModel || model;
@@ -103,15 +103,15 @@ export class APIService {
               model = settings.state?.openrouterModel || 'openai/gpt-3.5-turbo';
             }
           }
-          
+
           // APIキーのトリム処理
           apiKey = apiKey.trim();
-          
+
           // 結果を返す
           resolve({
             provider: apiProvider as 'openai' | 'openrouter',
             apiKey,
-            model
+            model,
           });
         });
       } catch (e) {
@@ -182,12 +182,12 @@ export class APIService {
         temperature: request.temperature,
         maxTokens: request.maxTokens,
       });
-      
+
       // レスポンスの確認
       if (!response || !response.success) {
         throw new Error(response?.error || 'バックグラウンドからの応答がありません');
       }
-      
+
       return response.result;
     } catch (error) {
       throw error;

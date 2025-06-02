@@ -1,15 +1,15 @@
-import { OpenAI } from "openai";
+import { OpenAI } from 'openai';
 
-export type AIProvider = "openai" | "openrouter";
+export type AIProvider = 'openai' | 'openrouter';
 
 export interface AIRequestOptions {
   model: string;
   messages: {
-    role: "system" | "user" | "assistant";
+    role: 'system' | 'user' | 'assistant';
     content: string;
   }[];
   temperature?: number;
-  max_tokens?: number;
+  max_completion_tokens?: number;
 }
 
 export interface AIResponse {
@@ -29,21 +29,21 @@ export class OpenAIClient implements AIClient {
   private readonly apiKey: string;
   private readonly provider: AIProvider;
 
-  constructor(apiKey: string, provider: AIProvider = "openai") {
+  constructor(apiKey: string, provider: AIProvider = 'openai') {
     this.apiKey = apiKey;
     this.provider = provider;
-    
-    if (provider === "openai") {
+
+    if (provider === 'openai') {
       this.client = new OpenAI({
         apiKey,
-        dangerouslyAllowBrowser: true
+        dangerouslyAllowBrowser: true,
       });
-    } else if (provider === "openrouter") {
-      const baseURL = "https://api.openrouter.ai/v1";
+    } else if (provider === 'openrouter') {
+      const baseURL = 'https://api.openrouter.ai/v1';
       this.client = new OpenAI({
         apiKey,
         baseURL,
-        dangerouslyAllowBrowser: true
+        dangerouslyAllowBrowser: true,
       });
     } else {
       throw new Error(`Unsupported AI provider: ${provider}`);
@@ -69,7 +69,7 @@ export class OpenAIClient implements AIClient {
         model: options.model,
         messages: options.messages,
         temperature: options.temperature || 0.7,
-        max_tokens: options.max_tokens || 2000,
+        max_completion_tokens: options.max_completion_tokens || 2000,
       });
 
       if (!response.choices || response.choices.length === 0) {

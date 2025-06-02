@@ -23,20 +23,7 @@ export interface Settings {
 export class StorageService {
   // デフォルト設定
   private static readonly defaultSettings: Settings = {
-    prompts: [
-      {
-        id: 'default-summary',
-        name: '要約',
-        systemPrompt: '以下のテキストを要約してください:\n\n{{text}}',
-        model: 'gpt-3.5-turbo',
-      },
-      {
-        id: 'default-translate-ja-en',
-        name: '翻訳（日本語→英語）',
-        systemPrompt: '以下のテキストを英語に翻訳してください:\n\n{{text}}',
-        model: 'gpt-3.5-turbo',
-      },
-    ],
+    prompts: [],
     insertPosition: 'below',
     speechLang: 'ja-JP',
     apiProvider: 'openai',
@@ -219,7 +206,7 @@ export class StorageService {
     // 有効なプロンプトが1つ以上あることを確認
     const validPrompts = items.prompts.filter(
       (p: any) =>
-        p && typeof p === 'object' && 'id' in p && 'name' in p && 'content' in p && 'model' in p
+        p && typeof p === 'object' && 'id' in p && 'name' in p && 'systemPrompt' in p && 'model' in p
     );
 
     if (validPrompts.length === 0) {
@@ -248,7 +235,7 @@ export class StorageService {
         // プロンプト配列は特別処理
         if (Array.isArray(items.prompts)) {
           const validPrompts = items.prompts.filter(
-            (p: any) => p && typeof p === 'object' && p.id && p.name && p.content
+            (p: any) => p && typeof p === 'object' && p.id && p.name && p.systemPrompt
           );
 
           if (validPrompts.length > 0) {

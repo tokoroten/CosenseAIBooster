@@ -19,7 +19,7 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       return null;
     }
   },
-  
+
   setItem: async (name: string, value: string): Promise<void> => {
     try {
       await browser.storage.sync.set({ [name]: value });
@@ -33,7 +33,7 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       console.error(`Error saving ${name} to chrome.storage.sync:`, error);
     }
   },
-  
+
   removeItem: async (name: string): Promise<void> => {
     try {
       await browser.storage.sync.remove(name);
@@ -41,7 +41,7 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       // eslint-disable-next-line no-console
       console.error(`Error removing ${name} from chrome.storage.sync:`, error);
     }
-  }
+  },
 };
 
 // ストレージから設定を直接取得するヘルパー関数

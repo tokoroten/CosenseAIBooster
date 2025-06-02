@@ -54,11 +54,11 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
 
   constructor(props: MenuManagerProps) {
     super(props);
-    
+
     if (ReactCosenseMenuManager.instance) {
       throw new Error('ReactCosenseMenuManager is already instantiated');
     }
-    
+
     ReactCosenseMenuManager.instance = this;
   }
 
@@ -75,13 +75,13 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
       console.error('Could not find .tools container');
       return;
     }
-    
+
     // Create a container for our React menu items
     const menuContainer = document.createElement('div');
     menuContainer.id = 'cosense-ai-menu-container';
     menuContainer.className = 'cosense-ai-menu-container';
     this.container.appendChild(menuContainer);
-    
+
     // Render our React component into the container
     ReactDOM.render(this.props.children, menuContainer);
   }
@@ -96,48 +96,48 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
     }
     ReactCosenseMenuManager.instance = null;
   }
-  
+
   addButton(button: CosenseMenuButton): void {
     this.buttons.push(button);
     this.forceUpdate();
   }
-  
+
   removeButton(id: string): void {
-    this.buttons = this.buttons.filter(button => button.id !== id);
+    this.buttons = this.buttons.filter((button) => button.id !== id);
     this.forceUpdate();
   }
-  
+
   addDropdown(dropdown: CosenseDropdownMenu): void {
     this.dropdowns.push(dropdown);
     this.forceUpdate();
   }
-  
+
   removeDropdown(id: string): void {
-    this.dropdowns = this.dropdowns.filter(dropdown => dropdown.id !== id);
+    this.dropdowns = this.dropdowns.filter((dropdown) => dropdown.id !== id);
     this.forceUpdate();
   }
-  
+
   addMenuItemToDropdown(dropdownId: string, menuItem: CosenseMenuItem): void {
-    const dropdown = this.dropdowns.find(d => d.id === dropdownId);
+    const dropdown = this.dropdowns.find((d) => d.id === dropdownId);
     if (dropdown) {
       dropdown.menuItems.push(menuItem);
       this.forceUpdate();
     }
   }
-  
+
   removeMenuItemFromDropdown(dropdownId: string, menuItemId: string): void {
-    const dropdown = this.dropdowns.find(d => d.id === dropdownId);
+    const dropdown = this.dropdowns.find((d) => d.id === dropdownId);
     if (dropdown) {
-      dropdown.menuItems = dropdown.menuItems.filter(item => item.id !== menuItemId);
+      dropdown.menuItems = dropdown.menuItems.filter((item) => item.id !== menuItemId);
       this.forceUpdate();
     }
   }
-  
+
   render() {
     return (
       <div className="cosense-ai-menu-items">
         {/* Render buttons */}
-        {this.buttons.map(button => (
+        {this.buttons.map((button) => (
           <button
             key={button.id}
             id={button.id}
@@ -148,9 +148,9 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
             {button.icon}
           </button>
         ))}
-        
+
         {/* Render dropdowns */}
-        {this.dropdowns.map(dropdown => (
+        {this.dropdowns.map((dropdown) => (
           <div key={dropdown.id} className={`dropdown ${dropdown.customClass || ''}`}>
             <button
               id={dropdown.id}
@@ -166,15 +166,13 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
             <ul className="dropdown-menu dropdown-menu-right" aria-labelledby={dropdown.id}>
               {dropdown.menuItems.map((item) => {
                 if (item.separator) {
-                  return (
-                    <li key={item.id} role="separator" className="divider"></li>
-                  );
+                  return <li key={item.id} role="separator" className="divider"></li>;
                 }
                 return (
                   <li key={item.id}>
-                    <a 
-                      href="#" 
-                      className={`dropdown-item ${item.customClass || ''}`} 
+                    <a
+                      href="#"
+                      className={`dropdown-item ${item.customClass || ''}`}
                       onClick={(e) => {
                         e.preventDefault();
                         item.onClick();
@@ -189,7 +187,7 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
             </ul>
           </div>
         ))}
-        
+
         {/* Original children */}
         {this.props.children}
       </div>
