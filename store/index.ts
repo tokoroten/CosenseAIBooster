@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Prompt, Settings } from '../utils/storage';
+import { Prompt, Settings } from '../hooks/useStorage';
 
 interface SettingsState extends Settings {
   setPrompts: (prompts: Prompt[]) => void;

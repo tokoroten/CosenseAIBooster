@@ -100,6 +100,15 @@ dist
 # vuepress build output
 .vuepress/dist
 
+# WXT build output
+.output/
+.wxt/
+
+# Chrome extension package files
+*.zip
+*.crx
+*.pem
+
 # vuepress v2.x temp and cache directory
 .temp
 .cache

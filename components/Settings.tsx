@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSettingsStore, useUIStore } from '../../store';
+import { useSettingsStore, useUIStore } from '../store';
 
 type TabId = 'prompts' | 'general' | 'api';
 
