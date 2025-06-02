@@ -43,13 +43,25 @@ const Tabs: React.FC<{ activeTab: string; onTabChange: (tabId: TabId) => void }>
   );
 };
 
+// プロンプト編集UIの型拡張
+const [editingPrompt, setEditingPrompt] = React.useState<{
+  id: string;
+  name: string;
+  content: string;
+  model: string;
+  provider?: 'openai' | 'openrouter' | 'custom' | 'localllm';
+  insertPosition?: 'below' | 'bottom';
+} | null>(null);
+
 const PromptsTab: React.FC = () => {
-  const { prompts, addPrompt, updatePrompt, deletePrompt } = useSettingsStore();
+  const { prompts, addPrompt, updatePrompt, deletePrompt, apiProvider } = useSettingsStore();
   const [editingPrompt, setEditingPrompt] = React.useState<{
     id: string;
     name: string;
     content: string;
     model: string;
+    provider?: 'openai' | 'openrouter' | 'custom' | 'localllm';
+    insertPosition?: 'below' | 'bottom';
   } | null>(null);
 
   const handleSave = () => {
@@ -111,8 +123,8 @@ const PromptsTab: React.FC = () => {
       </div>
 
       {editingPrompt && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-3xl min-w-[350px] w-full">
             <h3 className="text-lg font-medium mb-4">
               {editingPrompt.id ? 'プロンプト編集' : 'プロンプト作成'}
             </h3>
@@ -127,14 +139,76 @@ const PromptsTab: React.FC = () => {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700">プロバイダー</label>
+                <select
+                  value={editingPrompt.provider || apiProvider}
+                  onChange={(e) => {
+                    setEditingPrompt({
+                      ...editingPrompt,
+                      provider: e.target.value as 'openai' | 'openrouter' | 'custom' | 'localllm',
+                    });
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="">（全体設定に従う）</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="custom">カスタム</option>
+                  <option value="localllm">LocalLLM</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700">モデル</label>
                 <select
                   value={editingPrompt.model}
                   onChange={(e) => setEditingPrompt({ ...editingPrompt, model: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                  <option value="gpt-4">GPT-4</option>
+                  {/* プロバイダーごとに候補を切り替え */}
+                  {(editingPrompt.provider || apiProvider) === 'openai' && (
+                    <>
+                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    </>
+                  )}
+                  {(editingPrompt.provider || apiProvider) === 'openrouter' && (
+                    <>
+                      <option value="openai/gpt-3.5-turbo">OpenAI: GPT-3.5 Turbo</option>
+                      <option value="openai/gpt-4">OpenAI: GPT-4</option>
+                      <option value="anthropic/claude-2">Anthropic: Claude 2</option>
+                      <option value="google/gemini-pro">Google: Gemini Pro</option>
+                    </>
+                  )}
+                  {(editingPrompt.provider || apiProvider) === 'custom' && (
+                    <>
+                      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                      <option value="gpt-4">gpt-4</option>
+                    </>
+                  )}
+                  {(editingPrompt.provider || apiProvider) === 'localllm' && (
+                    <>
+                      <option value="llama3">llama3</option>
+                      <option value="other">other</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">挿入位置</label>
+                <select
+                  value={editingPrompt.insertPosition || ''}
+                  onChange={(e) => {
+                    setEditingPrompt({
+                      ...editingPrompt,
+                      insertPosition: e.target.value as 'below' | 'bottom',
+                    });
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value="">（全体設定に従う）</option>
+                  <option value="below">選択範囲の下</option>
+                  <option value="bottom">ページ最下部</option>
                 </select>
               </div>
               <div>
@@ -254,6 +328,50 @@ const ApiTab: React.FC = () => {
   const [showOpenAIKey, setShowOpenAIKey] = React.useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = React.useState(false);
   const [showCustomKey, setShowCustomKey] = React.useState(false);
+  const [verifyStatus, setVerifyStatus] = React.useState<string | null>(null);
+  const [verifying, setVerifying] = React.useState(false);
+
+  // APIキー検証関数
+  const verifyApiKey = async () => {
+    setVerifying(true);
+    setVerifyStatus(null);
+    try {
+      let valid = false;
+      if (apiProvider === 'openai' && openaiKey) {
+        const client = new (await import('../api/openai')).OpenAIClient(openaiKey);
+        await client.createChatCompletion({
+          model: openaiModel,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        });
+        valid = true;
+      } else if (apiProvider === 'openrouter' && openrouterKey) {
+        const client = new (await import('../api/openrouter')).OpenRouterClient(openrouterKey);
+        await client.createChatCompletion({
+          model: openrouterModel,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        });
+        valid = true;
+      } else if (apiProvider === 'custom' && customEndpoint && customKey) {
+        const client = new (await import('../api/custom')).CustomAPIClient(
+          customEndpoint,
+          customKey
+        );
+        await client.createChatCompletion({
+          model: customModel,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        });
+        valid = true;
+      }
+      setVerifyStatus(valid ? '✅ 有効なAPIキーです' : '❌ APIキーまたは設定が不正です');
+    } catch (e) {
+      setVerifyStatus('❌ APIキーまたは設定が不正です');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   return (
     <div className="p-4 space-y-6">
@@ -442,6 +560,18 @@ const ApiTab: React.FC = () => {
           </div>
         </div>
       )}
+
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          type="button"
+          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm disabled:opacity-50"
+          onClick={verifyApiKey}
+          disabled={verifying}
+        >
+          {verifying ? '検証中...' : 'APIキーを検証'}
+        </button>
+        {verifyStatus && <span className="text-sm ml-2">{verifyStatus}</span>}
+      </div>
     </div>
   );
 };
@@ -454,12 +584,7 @@ const Settings: React.FC = () => {
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto py-6">
         <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <h1 className="text-lg font-medium text-gray-900">Cosense AI Booster 設定</h1>
-          </div>
-
           <Tabs activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />
-
           {activeTab === 'prompts' && <PromptsTab />}
           {activeTab === 'general' && <GeneralTab />}
           {activeTab === 'api' && <ApiTab />}

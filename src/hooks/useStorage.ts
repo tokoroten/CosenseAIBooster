@@ -5,6 +5,8 @@ export interface Prompt {
   name: string;
   content: string;
   model: string;
+  provider?: 'openai' | 'openrouter' | 'custom' | 'localllm'; // 個別プロバイダー指定（省略時は全体設定依存）
+  insertPosition?: 'below' | 'bottom'; // 個別挿入位置（省略時は全体設定依存）
 }
 
 export interface Settings {
@@ -282,28 +284,25 @@ export class StorageService {
    */
   public static async savePrompt(prompt: Omit<Prompt, 'id'> & { id?: string }): Promise<Prompt> {
     const settings = await this.getSettings();
-
     const prompts = settings.prompts || [];
     const newPrompt: Prompt = {
       id: prompt.id || this.generateId(),
       name: prompt.name,
       content: prompt.content,
       model: prompt.model,
+      provider: prompt.provider, // 追加
+      insertPosition: prompt.insertPosition, // 追加
     };
-
     const existingPromptIndex = prompts.findIndex((p) => p.id === prompt.id);
-
     if (existingPromptIndex >= 0) {
       prompts[existingPromptIndex] = newPrompt;
     } else {
       prompts.push(newPrompt);
     }
-
     await this.saveSettings({
       ...settings,
       prompts,
     });
-
     return newPrompt;
   }
 

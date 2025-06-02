@@ -120,14 +120,35 @@ Cosense/Scrapbox のページ右側にあるメニューは以下のような HT
 ## 選択範囲のポップアップメニュー構造
 
 これが、テキストエリアの実体
+
 <textarea class="text-input hide" id="text-input" wrap="off" spellcheck="false" autocapitalize="none" style="top: 50px; left: 0px; height: 306px; width: 100%; z-index: 106;" readonly=""></textarea>
 
 これが範囲選択されると、次のようなポップアップメニューが表示される
 
-<div class="button-container" style="transform: translateX(-20.7476%); left: 141.868px;"><div class="button split-page-button">新規ページに分割</div><div class="button copy-plain-button">プレーンテキストをコピー</div></div>
+<div class="popup-menu" style="left: 0px; top: 67.5426px;"><div class="button-container" style="transform: translateX(-24.1341%); left: 186.57px;"><div class="button split-page-button">新規ページに分割</div><div class="button copy-plain-button">プレーンテキストをコピー</div></div><div class="triangle" style="left: 186.57px;"></div></div>
 
 ここに必要な機能を追加することで、選択範囲のポップアップメニューを拡張する
 
+
+## プログラムからテキストを読み書きする。
+
+基本的には <textarea class="text-input hide" id="text-input"> に対して、テキストの読み書きを行う。
+範囲選択なども、このテキストエリアに対して行う。
+末尾へ挿入、選択範囲の下への挿入などは、以下のように行う。
+```javascript
+// テキストエリアの取得
+const textInput = document.getElementById('text-input');
+// 末尾へテキストを挿入
+textInput.value += '追加するテキスト';
+// 選択範囲の下にテキストを挿入
+const selectionStart = textInput.selectionStart;
+const selectionEnd = textInput.selectionEnd;
+textInput.value = textInput.value.slice(0, selectionEnd) + '追加するテキスト' + textInput.value.slice(selectionEnd);
+```
+
+## カーソル座標の取得
+
+<div class="cursor" style="top: 319.517px; left: 445.866px; height: 18px; display: none;">
 
 ### CSSクラス
 - `page-menu`: メニュー全体を囲むコンテナ

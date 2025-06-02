@@ -74,29 +74,22 @@ export class SpeechRecognitionService {
     
     this.recognition.onresult = (event: any) => {
       this.interimTranscript = '';
-      
-      // Process the results
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        
         if (event.results[i].isFinal) {
           this.finalTranscript += transcript;
-          
-          // Call the result callback with the final transcript
           if (this.resultCallback) {
             this.resultCallback(transcript, true);
           }
+          // ★確定時にfinalTranscriptをリセット
+          this.finalTranscript = '';
         } else {
           this.interimTranscript += transcript;
         }
       }
-      
-      // Call the result callback with the interim transcript
       if (this.interimTranscript && this.resultCallback) {
         this.resultCallback(this.interimTranscript, false);
       }
-      
-      // Reset the pause detection timer
       this.resetPauseDetection();
     };
     
@@ -130,23 +123,15 @@ export class SpeechRecognitionService {
     if (this.pauseDetectionTimer) {
       window.clearTimeout(this.pauseDetectionTimer);
     }
-    
     this.pauseDetectionTimer = window.setTimeout(() => {
-      // If we're still listening, a pause was detected
+      // すでにfinalTranscriptが空なら何もしない（onresultで確定済み）
       if (this.isListening && this.finalTranscript) {
-        // Stop listening temporarily
         this.stop();
-        
-        // Call the result callback with the final transcript
         if (this.resultCallback) {
           this.resultCallback(this.finalTranscript, true);
         }
-        
-        // Reset the transcript
         this.finalTranscript = '';
         this.interimTranscript = '';
-        
-        // Restart listening after a short delay
         setTimeout(() => {
           this.start();
         }, 500);
