@@ -1,21 +1,52 @@
-import { OpenAI } from 'openai';
-import { AIClient, AIProvider, AIRequestOptions, OpenRouterResponse } from './ai-client';
+import { OpenAI } from "openai";
+
+export type AIProvider = "openai" | "openrouter";
+
+export interface AIRequestOptions {
+  model: string;
+  messages: {
+    role: "system" | "user" | "assistant";
+    content: string;
+  }[];
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface AIResponse {
+  content: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
 
 /**
  * AI API クライアント（OpenAI と OpenRouter の両方をサポート）
  */
 export class OpenAIClient implements AIClient {
-  private readonly openaiClient?: OpenAI;
+  private readonly client?: OpenAI;
   private readonly apiKey: string;
   private readonly provider: AIProvider;
-  private readonly baseURL: string = 'https://openrouter.ai/api/v1';
 
-  constructor(apiKey: string, provider: AIProvider = 'openai') {
+  constructor(apiKey: string, provider: AIProvider = "openai") {
     this.apiKey = apiKey;
     this.provider = provider;
     
-    if (provider === 'openai') {
-      this.openaiClient = new OpenAI({ apiKey });
+    if (provider === "openai") {
+      this.client = new OpenAI({
+        apiKey,
+        dangerouslyAllowBrowser: true
+      });
+    } else if (provider === "openrouter") {
+      const baseURL = "https://api.openrouter.ai/v1";
+      this.client = new OpenAI({
+        apiKey,
+        baseURL,
+        dangerouslyAllowBrowser: true
+      });
+    } else {
+      throw new Error(`Unsupported AI provider: ${provider}`);
     }
   }
 
@@ -23,57 +54,34 @@ export class OpenAIClient implements AIClient {
    * チャット補完を作成
    */
   async createChatCompletion(options: AIRequestOptions): Promise<string> {
+    // APIキーが空の場合はエラーをスロー
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('API key is required but was not provided');
+    }
+
+    // クライアントが初期化されていない場合はエラーをスロー
+    if (!this.client) {
+      throw new Error('OpenAI client is not initialized');
+    }
+
     try {
-      if (this.provider === 'openai' && this.openaiClient) {
-        // OpenAI用の処理
-        const response = await this.openaiClient.chat.completions.create({
-          model: options.model,
-          messages: options.messages,
-          temperature: options.temperature || 0.7,
-          max_tokens: options.max_tokens || 2000,
-        });
+      const response = await this.client.chat.completions.create({
+        model: options.model,
+        messages: options.messages,
+        temperature: options.temperature || 0.7,
+        max_tokens: options.max_tokens || 2000,
+      });
 
-        if (!response.choices || response.choices.length === 0) {
-          throw new Error('OpenAI API did not return any response choices');
-        }
-
-        return response.choices[0].message.content || '';
-      } else if (this.provider === 'openrouter') {
-        // OpenRouter用の処理
-        const response = await fetch(`${this.baseURL}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.apiKey}`,
-            'HTTP-Referer': 'https://github.com/shinshin86/CosenseAIBooster',
-          },
-          body: JSON.stringify({
-            model: options.model,
-            messages: options.messages,
-            temperature: options.temperature || 0.7,
-            max_tokens: options.max_tokens || 2000,
-            stream: false,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorBody = await response.text();
-          throw new Error(`OpenRouter API error: ${response.status} ${errorBody}`);
-        }
-
-        const data = (await response.json()) as OpenRouterResponse;
-        
-        if (!data.choices || data.choices.length === 0) {
-          throw new Error('OpenRouter API did not return any response choices');
-        }
-
-        return data.choices[0].message.content;
-      } else {
-        throw new Error(`Unsupported AI provider: ${this.provider}`);
+      if (!response.choices || response.choices.length === 0) {
+        throw new Error('OpenAI API did not return any response choices');
       }
+
+      return response.choices[0].message.content || '';
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`${this.provider} API Error:`, error);
+      // エラーをより詳細に投げる
+      if (error instanceof Error) {
+        throw new Error(`${this.provider} API Error: ${error.message}`);
+      }
       throw error;
     }
   }

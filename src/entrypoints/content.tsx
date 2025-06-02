@@ -5,7 +5,6 @@ import { createRoot } from 'react-dom/client';
 import '../styles/index.css';
 
 // Import the necessary components and utilities
-import { APIClientFactory } from '../api/index';
 import { Prompt } from '../hooks/useStorage';
 import {
   CosenseDOMUtils,
@@ -13,8 +12,9 @@ import {
   addButtonToPopupMenu,
   addButtonToPageMenu,
 } from '../utils/react-cosense-dom';
-import { useSettingsStore } from '../store';
+import { useFrontendStore } from '../store/frontend-store';
 import { SpeechRecognitionService } from '../utils/react-speech-recognition';
+import { browser } from 'wxt/browser';
 
 export default defineContentScript({
   matches: ['*://scrapbox.io/*', '*://cosen.se/*'],
@@ -33,9 +33,158 @@ export default defineContentScript({
   },
 });
 
+/**
+ * 選択テキストを取得する
+ */
+const getSelectedText = (): string => {
+  let selected = '';
+  const popup = document.querySelector('.popup-menu');
+  if (popup && popup instanceof HTMLElement) {
+    const textInput = document.querySelector('textarea#text-input.text-input');
+    if (textInput && textInput instanceof HTMLTextAreaElement && textInput.value) {
+      selected = textInput.value;
+    }
+  }
+  if (!selected) {
+    selected = window.getSelection()?.toString() || '';
+  }
+  return selected;
+};
+
+/**
+ * 結果表示用ダイアログを作成
+ */
+const createResultDialog = (promptName: string, selectedText: string): HTMLDialogElement => {
+  const resultDialog = document.createElement('dialog');
+  resultDialog.style.padding = '1.5em';
+  resultDialog.style.zIndex = '9999';
+  resultDialog.innerHTML = `<div>AI処理中...</div>
+    <div style="margin-top:0.5em;font-size:12px;">
+      <div><strong>システムプロンプト:</strong> ${promptName}</div>
+      <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
+    </div>`;
+  document.body.appendChild(resultDialog);
+  resultDialog.showModal();
+  return resultDialog;
+};
+
+/**
+ * 結果表示用ダイアログを更新
+ */
+const updateResultDialog = (
+  resultDialog: HTMLDialogElement,
+  promptName: string,
+  selectedText: string,
+  result: string,
+  insertPosition: 'below' | 'bottom'
+): void => {
+  resultDialog.innerHTML = `
+    <div style="margin-bottom:0.5em;">
+      <div><strong>システムプロンプト:</strong> ${promptName}</div>
+      <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
+    </div>
+    <div style="white-space:pre-wrap;max-width:500px;border-top:1px solid #ddd;padding-top:0.5em;">${result.replace(
+      /</g,
+      '&lt;'
+    )}</div>
+    <div style="margin-top:1em;">
+      <button id="insert-btn">Cosenseに挿入</button> 
+      <button id="close-btn">閉じる</button>
+    </div>
+  `;
+
+  resultDialog.querySelector('#insert-btn')?.addEventListener('click', () => {
+    const domUtils = new CosenseDOMUtils();
+    domUtils.insertText(result, insertPosition);
+    resultDialog.close();
+    resultDialog.remove();
+  });
+
+  resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
+    resultDialog.close();
+    resultDialog.remove();
+  });
+};
+
+/**
+ * エラー表示用ダイアログを更新
+ */
+const showErrorDialog = (resultDialog: HTMLDialogElement, errorMessage?: string): void => {
+  const message = errorMessage ? `AI処理に失敗しました: ${errorMessage}` : 'AI処理に失敗しました';
+  resultDialog.innerHTML = `
+    <div style="color:red;">${message}</div>
+    <div style="margin-top:1em;">
+      <button id="close-btn">閉じる</button>
+    </div>
+  `;
+  
+  resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
+    resultDialog.close();
+    resultDialog.remove();
+  });
+};
+
+/**
+ * プロンプト処理を実行
+ */
+const processPrompt = async (prompt: Prompt): Promise<void> => {
+  const selected = getSelectedText();
+  if (!selected) {
+    alert('テキストが選択されていません');
+    return;
+  }
+  
+  // 結果表示用ダイアログを先に作成
+  const resultDialog = createResultDialog(prompt.name, selected);
+  
+  try {
+    // 必要な設定のみ取得（APIキーは不要）
+    const state = useSettingsStore.getState();
+    
+    // プロンプト個別設定と全体設定を統合
+    const provider = prompt.provider || state.apiProvider;
+    const model = prompt.model || (provider === 'openai' ? state.openaiModel : state.openrouterModel);
+    
+    // デバッグ用の設定情報を表示
+    // eslint-disable-next-line no-console
+    console.log('Selected text:', selected);
+    // eslint-disable-next-line no-console
+    console.log('Prompt:', prompt);
+    // eslint-disable-next-line no-console
+    console.log(`プロバイダー: ${provider}, モデル: ${model}`);
+    
+    const request = {
+      prompt: prompt.systemPrompt,
+      selectedText: selected,
+      temperature: 0.7,
+      maxTokens: 2000,
+    };
+    
+    // セキュアなAPIリクエスト実行（APIキーはバックグラウンドスクリプトで管理）
+    const options = {
+      provider: provider as 'openai' | 'openrouter',
+      apiKey: '', // APIキーはバックグラウンドスクリプトで管理するため空にする
+      model: model,
+    };
+    
+    const result = await APIService.getCompletion(options, request);
+    
+    // 挿入位置の決定（プロンプト個別設定優先）
+    const insertPosition = prompt.insertPosition || state.insertPosition;
+    
+    // 結果ダイアログの更新
+    updateResultDialog(resultDialog, prompt.name, selected, result, insertPosition);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+    // 詳細なエラーメッセージを表示
+    showErrorDialog(resultDialog, errorMessage);
+  }
+};
+
 // Simple placeholder component - needs to be replaced with actual content script UI
 const ContentApp: React.FC = () => {
   const [prompts, setPrompts] = React.useState<Prompt[]>([]);
+  
   React.useEffect(() => {
     // Zustandストアからプロンプト一覧を取得
     setPrompts(useSettingsStore.getState().prompts);
@@ -43,109 +192,13 @@ const ContentApp: React.FC = () => {
 
     // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(() => {
-      // 共通の選択テキスト取得ロジック
-      const getSelectedText = (): string => {
-        let selected = '';
-        const popup = document.querySelector('.popup-menu');
-        if (popup && popup instanceof HTMLElement) {
-          const textInput = document.querySelector('textarea#text-input.text-input');
-          if (textInput && textInput instanceof HTMLTextAreaElement && textInput.value) {
-            selected = textInput.value;
-          }
-        }
-        if (!selected) {
-          selected = window.getSelection()?.toString() || '';
-        }
-        return selected;
-      };
-
       // 各プロンプトに対してボタンを追加
       prompts.forEach((prompt, index) => {
         addButtonToPopupMenu({
           id: `cosense-prompt-${prompt.id}`,
           label: prompt.name,
           className: `cosense-prompt-btn prompt-${index}`,
-          onClick: async () => {
-            const selected = getSelectedText();
-            if (!selected) {
-              alert('テキストが選択されていません');
-              return;
-            }
-            
-            // API呼び出し処理を実行
-            const settings = useSettingsStore.getState();
-            // プロンプト個別設定優先
-            let provider = prompt.provider || settings.apiProvider;
-            let apiKey = '';            let model = prompt.model || '';
-            
-            if (provider === 'openai') {
-              apiKey = settings.openaiKey;
-              if (!model) model = settings.openaiModel;
-            } else if (provider === 'openrouter') {
-              apiKey = settings.openrouterKey;
-              if (!model) model = settings.openrouterModel;
-            }
-            
-            const options = {
-              provider: provider as 'openai' | 'openrouter',
-              apiKey,
-              model,
-            };
-            const request = {
-              prompt: prompt.content,
-              selectedText: selected,
-              temperature: 0.7,
-              maxTokens: 2000,
-            };
-            
-            // 結果表示用ダイアログ
-            const resultDialog = document.createElement('dialog');
-            resultDialog.style.padding = '1.5em';
-            resultDialog.style.zIndex = '9999';
-            resultDialog.innerHTML = `<div>AI処理中...</div>
-              <div style="margin-top:0.5em;font-size:12px;">
-                <div><strong>システムプロンプト:</strong> ${prompt.name}</div>
-                <div><strong>ユーザー入力:</strong> ${selected.length > 30 ? selected.substring(0, 30) + '...' : selected}</div>
-              </div>`;
-            document.body.appendChild(resultDialog);
-            resultDialog.showModal();
-            
-            try {
-              const result = await APIClientFactory.getCompletion(options, request);
-              resultDialog.innerHTML = `
-                <div style="margin-bottom:0.5em;">
-                  <div><strong>システムプロンプト:</strong> ${prompt.name}</div>
-                  <div><strong>ユーザー入力:</strong> ${selected.length > 30 ? selected.substring(0, 30) + '...' : selected}</div>
-                </div>
-                <div style="white-space:pre-wrap;max-width:500px;border-top:1px solid #ddd;padding-top:0.5em;">${result.replace(
-                  /</g,
-                  '&lt;'
-                )}</div>
-                <div style="margin-top:1em;">
-                  <button id="insert-btn">Cosenseに挿入</button> 
-                  <button id="close-btn">閉じる</button>
-                </div>
-              `;
-              resultDialog.querySelector('#insert-btn')?.addEventListener('click', () => {
-                // 挿入位置はプロンプト個別設定優先
-                const domUtils = new CosenseDOMUtils();
-                const insertPosition = prompt.insertPosition || settings.insertPosition;
-                domUtils.insertText(result, insertPosition);
-                resultDialog.close();
-                resultDialog.remove();
-              });
-              resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-                resultDialog.close();
-                resultDialog.remove();
-              });
-            } catch (e) {
-              resultDialog.innerHTML = `<div style="color:red;">AI処理に失敗しました</div><div style="margin-top:1em;"><button id="close-btn">閉じる</button></div>`;
-              resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-                resultDialog.close();
-                resultDialog.remove();
-              });
-            }
-          },
+          onClick: () => processPrompt(prompt),
         });
       });
     });
@@ -284,6 +337,7 @@ const ContentApp: React.FC = () => {
       clearInterval(micInterval);
       overlay?.remove();
     };
-  }, []);
+  }, [prompts]);
+  
   return null;
 };

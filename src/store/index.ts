@@ -57,14 +57,17 @@ const defaultSettings: Settings = {
       model: 'gpt-3.5-turbo',
     },
 
-  ],
-  insertPosition: 'below',
+  ],  insertPosition: 'below',
   speechLang: 'ja-JP',
   apiProvider: 'openai',
   openaiKey: '',
-  openaiModel: 'gpt-3.5-turbo',  openrouterKey: '',
+  openaiModel: 'gpt-3.5-turbo',
+  openrouterKey: '',
   openrouterModel: 'openai/gpt-3.5-turbo'
 };
+
+// カスタムChromeストレージの実装をインポート
+import { chromeStorageApi } from './chromeStorage';
 
 // Settings store with persistence
 export const useSettingsStore = create<SettingsState>()(
@@ -81,12 +84,20 @@ export const useSettingsStore = create<SettingsState>()(
       setInsertPosition: (insertPosition) => set({ insertPosition }),
       setSpeechLang: (speechLang) => set({ speechLang }),
       setApiProvider: (apiProvider) => set({ apiProvider }),
-      setOpenaiKey: (openaiKey) => set({ openaiKey }),
-      setOpenaiModel: (openaiModel) => set({ openaiModel }),      setOpenrouterKey: (openrouterKey) => set({ openrouterKey }),
+      setOpenaiKey: (openaiKey) => {
+        console.log('Setting OpenAI key:', openaiKey ? '(key set)' : '(empty)');
+        return set({ openaiKey });
+      },
+      setOpenaiModel: (openaiModel) => set({ openaiModel }),
+      setOpenrouterKey: (openrouterKey) => {
+        console.log('Setting OpenRouter key:', openrouterKey ? '(key set)' : '(empty)');
+        return set({ openrouterKey });
+      },
       setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),
     }),
     {
       name: 'cosense-ai-settings',
+      storage: chromeStorageApi, // ChromeのStorage APIを使用
     }
   )
 );

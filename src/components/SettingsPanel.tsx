@@ -169,8 +169,12 @@ const PromptsTab: React.FC = () => {
                   {(editingPrompt.provider || apiProvider) === 'openai' && (
                     <>
                       <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                      <option value="gpt-4">GPT-4</option>
-                      <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                      <option value="gpt-4o">GPT-4o</option>
+                      <option value="gpt-4.1">GPT-4.1</option>
+                      <option value="gpt-o1">GPT-o1</option>
+                      <option value="gpt-o3">GPT-o3</option>
+                      <option value="gpt-o3-mini">GPT-o3 Mini</option>
+                      <option value="gpt-o4-mini">GPT-o4 Mini</option>
                     </>
                   )}
                   {(editingPrompt.provider || apiProvider) === 'openrouter' && (
@@ -181,18 +185,6 @@ const PromptsTab: React.FC = () => {
                       <option value="google/gemini-pro">Google: Gemini Pro</option>
                     </>
                   )}
-                  {/* {(editingPrompt.provider || apiProvider) === 'custom' && (
-                    <>
-                      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                      <option value="gpt-4">gpt-4</option>
-                    </>
-                  )}
-                  {(editingPrompt.provider || apiProvider) === 'localllm' && (
-                    <>
-                      <option value="llama3">llama3</option>
-                      <option value="other">other</option>
-                    </>
-                  )} */}
                 </select>
               </div>
               <div>
@@ -214,9 +206,6 @@ const PromptsTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">内容</label>
-                <div className="mt-1 text-xs text-gray-500">
-                  選択されたテキストを挿入するには {'{{text}}'} を使用します。
-                </div>
                 <textarea
                   value={editingPrompt.content}
                   onChange={(e) => setEditingPrompt({ ...editingPrompt, content: e.target.value })}
@@ -313,22 +302,15 @@ const ApiTab: React.FC = () => {
     openaiModel,
     openrouterKey,
     openrouterModel,
-    // customEndpoint,
-    // customKey,
-    // customModel,
     setApiProvider,
     setOpenaiKey,
     setOpenaiModel,
     setOpenrouterKey,
     setOpenrouterModel,
-    // setCustomEndpoint,
-    // setCustomKey,
-    // setCustomModel,
   } = useSettingsStore();
 
   const [showOpenAIKey, setShowOpenAIKey] = React.useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = React.useState(false);
-  // const [showCustomKey, setShowCustomKey] = React.useState(false);
   const [verifyStatus, setVerifyStatus] = React.useState<string | null>(null);
   const [verifying, setVerifying] = React.useState(false);
 
@@ -338,26 +320,64 @@ const ApiTab: React.FC = () => {
     setVerifyStatus(null);
     try {
       let valid = false;
+      
       if (apiProvider === 'openai' && openaiKey) {
-        const client = new OpenAIClient(openaiKey, 'openai');
-        await client.createChatCompletion({
-          model: openaiModel,
-          messages: [{ role: 'user', content: 'ping' }],
-          max_tokens: 1,
-        });
-        valid = true;
+        try {
+          // APIキーをトリム
+          const trimmedKey = openaiKey.trim();
+          // APIキー設定を保存
+          if (trimmedKey !== openaiKey) {
+            setOpenaiKey(trimmedKey);
+          }
+          
+          const client = new OpenAIClient(trimmedKey, 'openai');
+          await client.createChatCompletion({
+            model: openaiModel,
+            messages: [{ role: 'user', content: 'ping' }],
+            max_tokens: 10,
+          });
+          valid = true;
+        } catch (error) {
+          setVerifyStatus(
+            `❌ OpenAI API エラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
+          setVerifying(false);
+          return;
+        }
       } else if (apiProvider === 'openrouter' && openrouterKey) {
-        const client = new OpenAIClient(openrouterKey, 'openrouter');
-        await client.createChatCompletion({
-          model: openrouterModel,
-          messages: [{ role: 'user', content: 'ping' }],
-          max_tokens: 1,
-        });
-        valid = true;
+        try {
+          // APIキーをトリム
+          const trimmedKey = openrouterKey.trim();
+          // APIキー設定を保存
+          if (trimmedKey !== openrouterKey) {
+            setOpenrouterKey(trimmedKey);
+          }
+          
+          const client = new OpenAIClient(trimmedKey, 'openrouter');
+          await client.createChatCompletion({
+            model: openrouterModel,
+            messages: [{ role: 'user', content: 'ping' }],
+            max_tokens: 10,
+          });
+          valid = true;
+        } catch (error) {
+          setVerifyStatus(
+            `❌ OpenRouter API エラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
+          setVerifying(false);
+          return;
+        }
+      } else {
+        setVerifyStatus('❌ APIキーが入力されていません');
+        setVerifying(false);
+        return;
       }
+      
       setVerifyStatus(valid ? '✅ 有効なAPIキーです' : '❌ APIキーまたは設定が不正です');
     } catch (e) {
-      setVerifyStatus('❌ APIキーまたは設定が不正です');
+      setVerifyStatus(
+        `❌ エラーが発生しました: ${e instanceof Error ? e.message : 'Unknown error'}`
+      );
     } finally {
       setVerifying(false);
     }
@@ -392,18 +412,6 @@ const ApiTab: React.FC = () => {
               OpenRouter
             </label>
           </div>
-          {/* <div className="flex items-center">
-            <input
-              id="provider-custom"
-              type="radio"
-              checked={apiProvider === 'custom'}
-              onChange={() => setApiProvider('custom')}
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
-            />
-            <label htmlFor="provider-custom" className="ml-3 block text-sm text-gray-700">
-              カスタムエンドポイント
-            </label>
-          </div> */}
         </div>
       </div>
 
@@ -421,6 +429,12 @@ const ApiTab: React.FC = () => {
                   id="openai-key"
                   value={openaiKey}
                   onChange={(e) => setOpenaiKey(e.target.value)}
+                  onBlur={(e) => {
+                    const trimmed = e.target.value.trim();
+                    if (trimmed !== e.target.value) {
+                      setOpenaiKey(trimmed);
+                    }
+                  }}
                   className="block w-full pr-10 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
                 />
                 <button
@@ -443,8 +457,12 @@ const ApiTab: React.FC = () => {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               >
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4.1">GPT-4.1</option>
+                <option value="gpt-o1">GPT-o1</option>
+                <option value="gpt-o3">GPT-o3</option>
+                <option value="gpt-o3-mini">GPT-o3 Mini</option>
+                <option value="gpt-o4-mini">GPT-o4 Mini</option>
               </select>
             </div>
           </div>
@@ -465,6 +483,12 @@ const ApiTab: React.FC = () => {
                   id="openrouter-key"
                   value={openrouterKey}
                   onChange={(e) => setOpenrouterKey(e.target.value)}
+                  onBlur={(e) => {
+                    const trimmed = e.target.value.trim();
+                    if (trimmed !== e.target.value) {
+                      setOpenrouterKey(trimmed);
+                    }
+                  }}
                   className="block w-full pr-10 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
                 />
                 <button
@@ -495,61 +519,6 @@ const ApiTab: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* {apiProvider === 'custom' && (
-        <div>
-          <h3 className="text-lg font-medium">カスタム API 設定</h3>
-          <div className="mt-2 space-y-4">
-            <div>
-              <label htmlFor="custom-endpoint" className="block text-sm text-gray-700">
-                エンドポイント URL
-              </label>
-              <input
-                type="text"
-                id="custom-endpoint"
-                value={customEndpoint}
-                onChange={(e) => setCustomEndpoint(e.target.value)}
-                placeholder="https://api.example.com/v1/chat/completions"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="custom-key" className="block text-sm text-gray-700">
-                API キー
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type={showCustomKey ? 'text' : 'password'}
-                  id="custom-key"
-                  value={customKey}
-                  onChange={(e) => setCustomKey(e.target.value)}
-                  className="block w-full pr-10 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 px-3 flex items-center"
-                  onClick={() => setShowCustomKey(!showCustomKey)}
-                >
-                  {showCustomKey ? '隠す' : '表示'}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label htmlFor="custom-model" className="block text-sm text-gray-700">
-                モデル名
-              </label>
-              <input
-                type="text"
-                id="custom-model"
-                value={customModel}
-                onChange={(e) => setCustomModel(e.target.value)}
-                placeholder="gpt-3.5-turbo"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
-        </div>
-      )} */}
 
       <div className="flex items-center gap-2 mt-2">
         <button

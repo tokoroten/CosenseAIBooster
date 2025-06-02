@@ -1,4 +1,3 @@
-import { OpenAIClient } from './openai';
 import { useSettingsStore } from '../store';
 
 export interface APIClientOptions {
@@ -21,30 +20,104 @@ export class APIService {
   static getOptionsFromStore(): APIClientOptions {
     const state = useSettingsStore.getState();
 
+    // ストアの再ハイドレーションを試みる（Chrome拡張機能のストレージから最新の状態を読み込む）
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      // 同期的な処理としてストレージから読み込む（非同期処理だとエラーになる可能性があるため）
+      try {
+        chrome.storage.local.get('cosense-ai-settings', (result) => {
+          if (result && result['cosense-ai-settings']) {
+            // ローカルストレージから直接取得して状態を更新
+            const storedState = JSON.parse(result['cosense-ai-settings']);
+            if (storedState.state) {
+              console.log('ストレージから設定を読み込みました');
+            }
+          }
+        });
+      } catch (e) {
+        console.error('ストレージからの読み込みに失敗しました:', e);
+      }
+    }
+
+    // 状態のデバッグ出力
+    console.log('Current API settings:', {
+      provider: state.apiProvider,
+      openaiKey: state.openaiKey ? state.openaiKey.slice(0, 4) + '...' : '未設定',
+      openrouterKey: state.openrouterKey ? state.openrouterKey.slice(0, 4) + '...' : '未設定'
+    });
+
     // Based on the selected provider, return the appropriate options
     switch (state.apiProvider) {
       case 'openai':
+        // APIキーのトリミング処理
+        const openaiKey = state.openaiKey ? state.openaiKey.trim() : '';
+        if (!openaiKey) {
+          console.error('OpenAI APIキーが設定されていません');
+        }
         return {
           provider: 'openai',
-          apiKey: state.openaiKey,
+          apiKey: openaiKey,
           model: state.openaiModel,
         };
 
       case 'openrouter':
+        // APIキーのトリミング処理
+        const openrouterKey = state.openrouterKey ? state.openrouterKey.trim() : '';
+        if (!openrouterKey) {
+          console.error('OpenRouter APIキーが設定されていません');
+        }
         return {
           provider: 'openrouter',
-          apiKey: state.openrouterKey,
+          apiKey: openrouterKey,
           model: state.openrouterModel,
         };
-
+        
       default:
-        // fallback to openai
-        return {
-          provider: 'openai',
-          apiKey: state.openaiKey,
-          model: state.openaiModel,
-        };
+        throw new Error(`サポートされていないAPIプロバイダー: ${state.apiProvider}`);
     }
+  }
+
+  /**
+   * Get API client options directly from Chrome storage (async version)
+   * Chrome拡張機能のストレージから直接APIオプションを取得する（非同期版）
+   */
+  static async getOptionsFromStoreAsync(): Promise<APIClientOptions> {
+    const browser = (globalThis as any).browser || (globalThis as any).chrome;
+    
+    return new Promise<APIClientOptions>((resolve, reject) => {
+      try {
+        browser.storage.local.get(['cosense-ai-settings'], (result) => {
+          let apiProvider = 'openai';
+          let apiKey = '';
+          let model = 'gpt-3.5-turbo';
+          
+          // ストレージから設定を取得
+          if (result && result['cosense-ai-settings']) {
+            const settings = JSON.parse(result['cosense-ai-settings']);
+            apiProvider = settings.state?.apiProvider || apiProvider;
+            
+            if (apiProvider === 'openai') {
+              apiKey = settings.state?.openaiKey || '';
+              model = settings.state?.openaiModel || model;
+            } else if (apiProvider === 'openrouter') {
+              apiKey = settings.state?.openrouterKey || '';
+              model = settings.state?.openrouterModel || 'openai/gpt-3.5-turbo';
+            }
+          }
+          
+          // APIキーのトリム処理
+          apiKey = apiKey.trim();
+          
+          // 結果を返す
+          resolve({
+            provider: apiProvider as 'openai' | 'openrouter',
+            apiKey,
+            model
+          });
+        });
+      } catch (e) {
+        reject(new Error('ストレージからの設定取得に失敗しました'));
+      }
+    });
   }
 
   /**
@@ -99,14 +172,23 @@ export class APIService {
         },
       ];
 
-      // OpenAIClient で両方のプロバイダーをサポート
-      const client = new OpenAIClient(options.apiKey, options.provider);
-      return await client.createChatCompletion({
+      // バックグラウンドスクリプトにメッセージを送信
+      const browser = (globalThis as any).browser || (globalThis as any).chrome;
+      const response = await browser.runtime.sendMessage({
+        type: 'CREATE_CHAT_COMPLETION',
+        provider: options.provider,
         model: options.model,
         messages,
         temperature: request.temperature,
-        max_tokens: request.maxTokens,
+        maxTokens: request.maxTokens,
       });
+      
+      // レスポンスの確認
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'バックグラウンドからの応答がありません');
+      }
+      
+      return response.result;
     } catch (error) {
       throw error;
     }
