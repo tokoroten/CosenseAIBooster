@@ -43,15 +43,15 @@ const Tabs: React.FC<{ activeTab: string; onTabChange: (tabId: TabId) => void }>
   );
 };
 
-// プロンプト編集UIの型拡張
-const [editingPrompt, setEditingPrompt] = React.useState<{
+// プロンプト編集UIの型定義
+type PromptEditingType = {
   id: string;
   name: string;
   content: string;
   model: string;
   provider?: 'openai' | 'openrouter' | 'custom' | 'localllm';
   insertPosition?: 'below' | 'bottom';
-} | null>(null);
+} | null;
 
 const PromptsTab: React.FC = () => {
   const { prompts, addPrompt, updatePrompt, deletePrompt, apiProvider } = useSettingsStore();
@@ -123,19 +123,19 @@ const PromptsTab: React.FC = () => {
       </div>
 
       {editingPrompt && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-3xl min-w-[350px] w-full">
-            <h3 className="text-lg font-medium mb-4">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-2 z-50" style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0 }}>
+          <div className="bg-white rounded-lg p-4 max-w-[350px] w-full" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 className="text-lg font-medium mb-3">
               {editingPrompt.id ? 'プロンプト編集' : 'プロンプト作成'}
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700">名前</label>
                 <input
                   type="text"
                   value={editingPrompt.name}
                   onChange={(e) => setEditingPrompt({ ...editingPrompt, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 />
               </div>
               <div>
@@ -219,21 +219,21 @@ const PromptsTab: React.FC = () => {
                 <textarea
                   value={editingPrompt.content}
                   onChange={(e) => setEditingPrompt({ ...editingPrompt, content: e.target.value })}
-                  rows={6}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  rows={4}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 ></textarea>
               </div>
             </div>
-            <div className="mt-5 flex justify-end space-x-3">
+            <div className="mt-4 flex justify-end space-x-2">
               <button
                 onClick={() => setEditingPrompt(null)}
-                className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+                className="px-3 py-1.5 text-sm border rounded text-gray-700 hover:bg-gray-50"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
                 保存
               </button>
@@ -576,14 +576,16 @@ const ApiTab: React.FC = () => {
   );
 };
 
-const Settings: React.FC = () => {
+const SettingsPanel: React.FC<{
+  isPopup?: boolean;
+}> = ({ isPopup = false }) => {
   const activeTab = useUIStore((state) => state.activeTab) as TabId;
   const setActiveTab = useUIStore((state) => state.setActiveTab);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto py-6">
-        <div className="bg-white shadow rounded-lg">
+    <div className={isPopup ? '' : 'bg-gray-50 min-h-screen'}>
+      <div className={isPopup ? '' : 'max-w-6xl mx-auto py-6'}>
+        <div className={isPopup ? 'bg-white' : 'bg-white shadow rounded-lg'}>
           <Tabs activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />
           {activeTab === 'prompts' && <PromptsTab />}
           {activeTab === 'general' && <GeneralTab />}
@@ -594,4 +596,5 @@ const Settings: React.FC = () => {
   );
 };
 
-export default Settings;
+export { Tabs, PromptsTab, GeneralTab, ApiTab };
+export default SettingsPanel;

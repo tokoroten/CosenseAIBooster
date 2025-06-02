@@ -11,6 +11,26 @@ Cosenseで使えるAIアシスタント Chrome拡張機能です。音声入力�
   - OpenRouter API
   - カスタムエンドポイント
 
+## プロジェクト構造
+
+本プロジェクトは以下のような構造になっています：
+
+```
+CosenseAIBooster/
+├─ src/                 # ソースコード
+│  ├─ api/              # APIクライアント実装
+│  ├─ components/       # Reactコンポーネント
+│  ├─ entrypoints/      # WXT エントリーポイント（バックグラウンド、コンテンツスクリプト、ポップアップなど）
+│  ├─ hooks/            # Reactカスタムフック
+│  ├─ public/           # 静的ファイル
+│  ├─ store/            # Zustandストア
+│  ├─ styles/           # CSSスタイル
+│  └─ utils/            # ユーティリティ関数
+├─ knowledge/           # プロジェクトドキュメント
+├─ scripts/             # ビルドスクリプト
+└─ [設定ファイル]       # 各種設定ファイル (package.json, tsconfig.json など)
+```
+
 ## インストール方法
 
 ### 開発版をインストール
