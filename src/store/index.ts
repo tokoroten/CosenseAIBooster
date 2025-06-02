@@ -42,19 +42,19 @@ const defaultSettings: Settings = {
       id: 'default-summary',
       name: '要約',
       systemPrompt: 'あなたは与えられたテキストを要約してください',
-      model: 'gpt-3.5-turbo',
+      model: 'o4-mini',
     },
     {
       id: 'default-summary',
       name: '音声認識成形',
       systemPrompt: 'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする\n\n以下のテキストを整形してください:\n\n{{text}}',
-      model: 'gpt-3.5-turbo',
+      model: 'o4-mini',
     },
     {
       id: 'default-translate-ja-en',
       name: '翻訳（日→英）',
       systemPrompt: 'あなたは与えられたテキストを英語に翻訳してください',
-      model: 'gpt-3.5-turbo',
+      model: 'o4-mini',
     },
 
   ],  insertPosition: 'below',

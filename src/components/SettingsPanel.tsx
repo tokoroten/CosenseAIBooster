@@ -48,9 +48,9 @@ const Tabs: React.FC<{ activeTab: string; onTabChange: (tabId: TabId) => void }>
 type PromptEditingType = {
   id: string;
   name: string;
-  content: string;
+  systemPrompt: string;
   model: string;
-  provider?: 'openai' | 'openrouter' | 'custom' | 'localllm';
+  provider?: 'openai' | 'openrouter';
   insertPosition?: 'below' | 'bottom';
 } | null;
 
@@ -59,21 +59,27 @@ const PromptsTab: React.FC = () => {
   const [editingPrompt, setEditingPrompt] = React.useState<{
     id: string;
     name: string;
-    content: string;
+    systemPrompt: string;
     model: string;
-    provider?: 'openai' | 'openrouter' | 'custom' | 'localllm';
+    provider?: 'openai' | 'openrouter';
     insertPosition?: 'below' | 'bottom';
   } | null>(null);
 
   const handleSave = () => {
     if (editingPrompt) {
+      const promptToSave = {
+        id: editingPrompt.id || `prompt-${Date.now()}`,
+        name: editingPrompt.name,
+        systemPrompt: editingPrompt.systemPrompt,
+        model: editingPrompt.model,
+        provider: editingPrompt.provider,
+        insertPosition: editingPrompt.insertPosition,
+      };
+      
       if (editingPrompt.id && prompts.some((p) => p.id === editingPrompt.id)) {
-        updatePrompt(editingPrompt);
+        updatePrompt(promptToSave);
       } else {
-        addPrompt({
-          ...editingPrompt,
-          id: editingPrompt.id || `prompt-${Date.now()}`,
-        });
+        addPrompt(promptToSave);
       }
       setEditingPrompt(null);
     }
@@ -85,7 +91,7 @@ const PromptsTab: React.FC = () => {
         <h2 className="text-lg font-medium">プロンプト管理</h2>
         <button
           onClick={() =>
-            setEditingPrompt({ id: '', name: '', content: '', model: 'gpt-3.5-turbo' })
+            setEditingPrompt({ id: '', name: '', systemPrompt: '', model: 'gpt-3.5-turbo' })
           }
           className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
         >
@@ -115,9 +121,9 @@ const PromptsTab: React.FC = () => {
             </div>
             <div className="text-sm text-gray-500 mt-1">モデル: {prompt.model}</div>
             <div className="mt-2 text-sm text-gray-700 whitespace-pre-line">
-              {prompt.content.length > 100
-                ? `${prompt.content.substring(0, 100)}...`
-                : prompt.content}
+              {prompt.systemPrompt.length > 100
+                ? `${prompt.systemPrompt.substring(0, 100)}...`
+                : prompt.systemPrompt}
             </div>
           </div>
         ))}
@@ -146,7 +152,7 @@ const PromptsTab: React.FC = () => {
                   onChange={(e) => {
                     setEditingPrompt({
                       ...editingPrompt,
-                      provider: e.target.value as 'openai' | 'openrouter' | 'custom' | 'localllm',
+                      provider: e.target.value as 'openai' | 'openrouter',
                     });
                   }}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -154,8 +160,6 @@ const PromptsTab: React.FC = () => {
                   <option value="">（全体設定に従う）</option>
                   <option value="openai">OpenAI</option>
                   <option value="openrouter">OpenRouter</option>
-                  {/* <option value="custom">カスタム</option>
-                  <option value="localllm">LocalLLM</option> */}
                 </select>
               </div>
               <div>
@@ -207,8 +211,8 @@ const PromptsTab: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700">内容</label>
                 <textarea
-                  value={editingPrompt.content}
-                  onChange={(e) => setEditingPrompt({ ...editingPrompt, content: e.target.value })}
+                  value={editingPrompt.systemPrompt}
+                  onChange={(e) => setEditingPrompt({ ...editingPrompt, systemPrompt: e.target.value })}
                   rows={4}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 ></textarea>

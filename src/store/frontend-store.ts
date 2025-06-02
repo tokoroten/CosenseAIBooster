@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { Prompt } from '../hooks/useStorage';
 import { browser } from 'wxt/browser';
+import { FrontendAPIService } from '../api/frontend-service';
 
 // フロントエンド用の状態型定義（APIキーなどを含まない）
 interface FrontendState {
@@ -15,10 +16,17 @@ interface FrontendState {
   openaiModel: string;
   openrouterModel: string;
   
+  // 読み込み状態
+  isLoading: boolean;
+  isLoaded: boolean;
+  
   // アクション
   setPrompts: (prompts: Prompt[]) => void;
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
+  setApiProvider: (provider: 'openai' | 'openrouter') => void;
+  setIsLoading: (isLoading: boolean) => void;
+  setIsLoaded: (isLoaded: boolean) => void;
   
   // データロード
   loadSettings: () => Promise<void>;
@@ -50,7 +58,9 @@ const defaultFrontendSettings = {
   speechLang: 'ja-JP',
   apiProvider: 'openai',
   openaiModel: 'gpt-3.5-turbo',
-  openrouterModel: 'openai/gpt-3.5-turbo'
+  openrouterModel: 'openai/gpt-3.5-turbo',
+  isLoading: false,
+  isLoaded: false
 };
 
 // フロントエンド用のストア作成
@@ -60,34 +70,39 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
   setPrompts: (prompts) => set({ prompts }),
   setInsertPosition: (insertPosition) => set({ insertPosition }),
   setSpeechLang: (speechLang) => set({ speechLang }),
+  setApiProvider: (apiProvider) => set({ apiProvider }),
+  setIsLoading: (isLoading) => set({ isLoading }),
+  setIsLoaded: (isLoaded) => set({ isLoaded }),
   
   // バックグラウンドからデータをロード
   loadSettings: async () => {
     try {
-      // バックグラウンドスクリプトからデータをリクエスト
-      const response = await browser.runtime.sendMessage({
-        type: 'GET_FRONTEND_SETTINGS'
-      });
+      set({ isLoading: true });
       
-      if (response && response.success) {
+      // APIサービス経由でバックグラウンドから設定を取得
+      const settings = await FrontendAPIService.getFrontendSettings();
+      
+      if (settings) {
         // APIキーなどの機密情報を除外して設定を更新
-        const { frontendSettings } = response;
-        
         set({
-          prompts: frontendSettings.prompts || get().prompts,
-          insertPosition: frontendSettings.insertPosition || get().insertPosition,
-          speechLang: frontendSettings.speechLang || get().speechLang,
-          apiProvider: frontendSettings.apiProvider || get().apiProvider,
-          openaiModel: frontendSettings.openaiModel || get().openaiModel,
-          openrouterModel: frontendSettings.openrouterModel || get().openrouterModel,
+          prompts: settings.prompts || get().prompts,
+          insertPosition: settings.insertPosition || get().insertPosition,
+          speechLang: settings.speechLang || get().speechLang,
+          apiProvider: settings.apiProvider || get().apiProvider,
+          openaiModel: settings.openaiModel || get().openaiModel,
+          openrouterModel: settings.openrouterModel || get().openrouterModel,
+          isLoaded: true,
+          isLoading: false
         });
         
         console.log('フロントエンド設定をバックグラウンドから読み込みました');
       } else {
         console.warn('バックグラウンドからの設定取得に失敗しました、デフォルト値を使用します');
+        set({ isLoaded: true, isLoading: false });
       }
     } catch (error) {
       console.error('設定の取得中にエラーが発生しました', error);
+      set({ isLoaded: true, isLoading: false });
     }
   }
 }));

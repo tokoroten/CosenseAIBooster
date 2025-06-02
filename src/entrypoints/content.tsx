@@ -14,7 +14,7 @@ import {
 } from '../utils/react-cosense-dom';
 import { useFrontendStore } from '../store/frontend-store';
 import { SpeechRecognitionService } from '../utils/react-speech-recognition';
-import { browser } from 'wxt/browser';
+import { FrontendAPIService } from '../api/frontend-service';
 
 export default defineContentScript({
   matches: ['*://scrapbox.io/*', '*://cosen.se/*'],
@@ -138,42 +138,23 @@ const processPrompt = async (prompt: Prompt): Promise<void> => {
   const resultDialog = createResultDialog(prompt.name, selected);
   
   try {
-    // 必要な設定のみ取得（APIキーは不要）
-    const state = useSettingsStore.getState();
-    
-    // プロンプト個別設定と全体設定を統合
-    const provider = prompt.provider || state.apiProvider;
-    const model = prompt.model || (provider === 'openai' ? state.openaiModel : state.openrouterModel);
-    
     // デバッグ用の設定情報を表示
     // eslint-disable-next-line no-console
     console.log('Selected text:', selected);
     // eslint-disable-next-line no-console
-    console.log('Prompt:', prompt);
-    // eslint-disable-next-line no-console
-    console.log(`プロバイダー: ${provider}, モデル: ${model}`);
+    console.log('Prompt ID:', prompt.id);
     
-    const request = {
-      prompt: prompt.systemPrompt,
-      selectedText: selected,
-      temperature: 0.7,
-      maxTokens: 2000,
-    };
-    
-    // セキュアなAPIリクエスト実行（APIキーはバックグラウンドスクリプトで管理）
-    const options = {
-      provider: provider as 'openai' | 'openrouter',
-      apiKey: '', // APIキーはバックグラウンドスクリプトで管理するため空にする
-      model: model,
-    };
-    
-    const result = await APIService.getCompletion(options, request);
-    
-    // 挿入位置の決定（プロンプト個別設定優先）
-    const insertPosition = prompt.insertPosition || state.insertPosition;
+    // フロントエンドサービス経由でバックグラウンドに処理を依頼
+    const response = await FrontendAPIService.processPrompt(prompt.id, selected);
     
     // 結果ダイアログの更新
-    updateResultDialog(resultDialog, prompt.name, selected, result, insertPosition);
+    updateResultDialog(
+      resultDialog, 
+      response.promptName || prompt.name, 
+      selected, 
+      response.result, 
+      response.insertPosition
+    );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '不明なエラー';
     // 詳細なエラーメッセージを表示
@@ -181,15 +162,46 @@ const processPrompt = async (prompt: Prompt): Promise<void> => {
   }
 };
 
-// Simple placeholder component - needs to be replaced with actual content script UI
+// Content App component
 const ContentApp: React.FC = () => {
+  // フロントエンド専用のストアを使用
   const [prompts, setPrompts] = React.useState<Prompt[]>([]);
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const frontendStore = useFrontendStore;
+  
+  // 初期化時に設定をロード
+  React.useEffect(() => {
+    // 初回のみ設定をロード
+    const loadSettings = async () => {
+      try {
+        console.log('バックグラウンドから設定をロードしています...');
+        // フロントエンドストアのロード関数を実行してバックグラウンドからデータを取得
+        await frontendStore.getState().loadSettings();
+        
+        // プロンプトリストを更新（APIキーは含まれない）
+        setPrompts(frontendStore.getState().prompts);
+        setIsLoaded(true);
+        
+        console.log('フロントエンド設定のロードが完了しました');
+      } catch (err) {
+        console.error('フロントエンド設定のロード中にエラーが発生しました:', err);
+        // エラー時はフロントエンドストアのデフォルト値を使用
+        setPrompts(frontendStore.getState().prompts);
+        setIsLoaded(true);
+      }
+    };
+    
+    loadSettings();
+    
+    // ストアの変更を監視
+    const unsub = frontendStore.subscribe((state) => setPrompts(state.prompts));
+    
+    return () => {
+      unsub();
+    };
+  }, []);
   
   React.useEffect(() => {
-    // Zustandストアからプロンプト一覧を取得
-    setPrompts(useSettingsStore.getState().prompts);
-    const unsub = useSettingsStore.subscribe((state) => setPrompts(state.prompts));
-
     // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(() => {
       // 各プロンプトに対してボタンを追加
@@ -215,9 +227,9 @@ const ContentApp: React.FC = () => {
         ariaLabel: '音声入力',
         icon: '<span style="font-size:16px;">🎤</span>',
         className: 'cosense-mic-btn',
-        onClick: () => {
-          if (!recognition) {
-            const lang = useSettingsStore.getState().speechLang || 'ja-JP';
+        onClick: () => {          if (!recognition) {
+            // フロントエンドストアから音声設定を取得
+            const lang = frontendStore.getState().speechLang || 'ja-JP';
             recognition = new SpeechRecognitionService({
               language: lang,
               continuous: true,
@@ -329,10 +341,7 @@ const ContentApp: React.FC = () => {
         },
       });
     };
-    const micInterval = setInterval(setupMicButton, 1000);
-
-    return () => {
-      unsub();
+    const micInterval = setInterval(setupMicButton, 1000);    return () => {
       disconnect();
       clearInterval(micInterval);
       overlay?.remove();

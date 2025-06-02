@@ -43,6 +43,92 @@ export default defineBackground(() => {
             error: error instanceof Error ? error.message : '不明なエラー'
           });
         }
+      }      else if (request.type === 'PROCESS_PROMPT') {
+        // プロンプト処理をバックグラウンドで実行（APIキーはバックグラウンドでのみ使用）
+        try {
+          console.log('バックグラウンドでプロンプト処理を開始します');
+          const state = useSettingsStore.getState();
+          const { promptId, selectedText } = request;
+          
+          if (!selectedText || selectedText.trim() === '') {
+            return Promise.resolve({
+              success: false,
+              error: 'テキストが選択されていないか、空のテキストです'
+            });
+          }
+          
+          // プロンプトIDからプロンプト情報を取得
+          const prompt = state.prompts.find(p => p.id === promptId);
+          if (!prompt) {
+            return Promise.resolve({
+              success: false,
+              error: `プロンプトID "${promptId}" が見つかりません`
+            });
+          }
+          
+          console.log(`プロンプト "${prompt.name}" を使用して処理します`);
+          
+          // APIキー関連の処理（バックグラウンドでのみ実行）
+          let apiKey = '';
+          let model = prompt.model || '';
+          
+          // APIプロバイダーに応じたキーと設定を選択
+          if (state.apiProvider === 'openai') {
+            apiKey = state.openaiKey.trim();
+            if (!model) model = state.openaiModel;
+            console.log(`OpenAIモデル: ${model} を使用します`);
+          } else if (state.apiProvider === 'openrouter') {
+            apiKey = state.openrouterKey.trim();
+            if (!model) model = state.openrouterModel;
+            console.log(`OpenRouterモデル: ${model} を使用します`);
+          }
+          
+          if (!apiKey) {
+            console.error('APIキーが設定されていません');
+            return Promise.resolve({
+              success: false,
+              error: `${state.apiProvider === 'openai' ? 'OpenAI' : 'OpenRouter'} APIキーが設定されていません。設定画面から設定してください。`
+            });
+          }
+          
+          // APIリクエストの実行
+          console.log('AIクライアントを初期化しています...');
+          const openAIClient = new OpenAIClient(apiKey, state.apiProvider);
+          
+          console.log('API呼び出しを開始します...');
+          const result = await openAIClient.createChatCompletion({
+            model: model,
+            messages: [
+              {
+                role: 'system',
+                content: prompt.systemPrompt
+              },
+              {
+                role: 'user',
+                content: selectedText
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 2000
+          });
+          
+          console.log('プロンプト処理が完了しました');
+          return Promise.resolve({
+            success: true,
+            result,
+            promptName: prompt.name,
+            insertPosition: state.insertPosition
+          });
+          
+        } catch (error) {
+          console.error('プロンプト処理中にエラーが発生しました:', error);
+          return Promise.resolve({
+            success: false,
+            error: error instanceof Error ? 
+              `${error.message}（APIキーが正しく設定されているか確認してください）` : 
+              'AI処理中に不明なエラーが発生しました'
+          });
+        }
       }
       else if (request.type === 'CREATE_CHAT_COMPLETION') {
         try {
@@ -85,76 +171,6 @@ export default defineBackground(() => {
           return Promise.resolve({ 
             success: false, 
             error: error instanceof Error ? error.message : '不明なエラー' 
-          });
-        }
-      }
-      else if (request.type === 'PROCESS_PROMPT') {
-        // プロンプト処理リクエストを一元的に処理
-        try {
-          const state = useSettingsStore.getState();
-          const { promptId, selectedText } = request;
-          
-          // プロンプト情報を検索
-          const prompt = state.prompts.find(p => p.id === promptId);
-          if (!prompt) {
-            return Promise.resolve({
-              success: false,
-              error: `ID: ${promptId} のプロンプトが見つかりません`
-            });
-          }
-          
-          // プロンプト個別設定と全体設定を統合
-          const provider = prompt.provider || state.apiProvider;
-          const model = prompt.model || (provider === 'openai' ? state.openaiModel : state.openrouterModel);
-          
-          // APIキーを取得
-          let apiKey = '';
-          if (provider === 'openai') {
-            apiKey = state.openaiKey?.trim();
-          } else if (provider === 'openrouter') {
-            apiKey = state.openrouterKey?.trim();
-          }
-          
-          // APIキーのチェック
-          if (!apiKey) {
-            return Promise.resolve({ 
-              success: false, 
-              error: `APIキーが設定されていません。設定画面で${provider}のAPIキーを設定してください。` 
-            });
-          }
-          
-          // リクエストの組み立て
-          const messages = [
-            {
-              role: 'system' as const,
-              content: prompt.systemPrompt.replace('{{text}}', ''),
-            },
-            {
-              role: 'user' as const,
-              content: selectedText || '',
-            },
-          ];
-          
-          // APIクライアントを初期化して実行
-          const client = new OpenAIClient(apiKey, provider);
-          const result = await client.createChatCompletion({
-            model: model,
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 2000,
-          });
-          
-          // 結果を返送
-          return Promise.resolve({ 
-            success: true, 
-            result,
-            promptName: prompt.name,
-            insertPosition: prompt.insertPosition || state.insertPosition
-          });
-        } catch (error) {
-          return Promise.resolve({
-            success: false,
-            error: error instanceof Error ? error.message : '不明なエラー'
           });
         }
       }
