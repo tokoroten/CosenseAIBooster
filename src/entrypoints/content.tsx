@@ -183,18 +183,17 @@ const ContentApp: React.FC = () => {
       });
     });
     // マイクボタン設置
-    let micBtn: HTMLButtonElement | null = null;
     let overlay: HTMLDivElement | null = null;
     let recognition: SpeechRecognitionService | null = null;
     let isListening = false;
-    let lastOverlayText = '';
+
     const setupMicButton = () => {
       if (document.getElementById('cosense-mic-btn')) return;
-      micBtn = addButtonToPageMenu({
+      addButtonToPageMenu({
         id: 'cosense-mic-btn',
         ariaLabel: '音声入力',
         icon: '<span style="font-size:16px;">🎤</span>',
-        className: '',
+        className: 'cosense-mic-btn',
         onClick: () => {
           if (!recognition) {
             const lang = useSettingsStore.getState().speechLang || 'ja-JP';
@@ -219,67 +218,42 @@ const ContentApp: React.FC = () => {
                 overlay.style.border = '1px solid #aaa';
                 overlay.style.borderRadius = '4px';
                 overlay.style.padding = '6px 6px';
-                if (textInput) {
-                  const computed = window.getComputedStyle(textInput);
-                  overlay.style.fontSize = computed.fontSize;
-                  overlay.style.fontFamily = computed.fontFamily;
-                }
                 textInput?.parentElement?.appendChild(overlay);
               }
               // .cursor要素の座標を取得してオーバーレイを配置
-              const cursorElem = document.querySelector('.cursor') as HTMLDivElement | null;
               let overlayLeft = 0;
               let overlayTop = 0;
-              let overlayWidth = 0;
-              let overlayHeight = 0;
-              let overlayFontSize = '16px';
-              let overlayFontFamily = 'monospace';
-              if (textInput) {
-                const computed = window.getComputedStyle(textInput);
-                overlayFontSize = computed.fontSize;
-                overlayFontFamily = computed.fontFamily;
-              }
-              if (cursorElem && cursorElem.getBoundingClientRect().width > 0 && cursorElem.getBoundingClientRect().height > 0) {
-                const cursorRect = cursorElem.getBoundingClientRect();
-                overlayTop = cursorRect.top;
-                overlayLeft = cursorRect.left;
-                overlayHeight = cursorRect.height > 0 ? cursorRect.height : 20;
-                overlayWidth = 0; // widthはauto
+              const overlayFontSize = '16px';
+              const overlayFontFamily = 'monospace';
+
+              // .cursor要素が存在する場合はその位置を使用
+              const cursorElem = document.querySelector('.cursor') as HTMLDivElement | null;
+              if (
+                cursorElem &&
+                cursorElem.getBoundingClientRect().width > 0 &&
+                cursorElem.getBoundingClientRect().height > 0
+              ) {
+                overlayLeft = cursorElem.getBoundingClientRect().left;
+                overlayTop = cursorElem.getBoundingClientRect().top;
               } else if (textInput) {
-                // キャレットがない場合はtextareaの中央に表示
                 const rect = textInput.getBoundingClientRect();
-                overlayTop = rect.top + rect.height / 2 - 20;
                 overlayLeft = rect.left + rect.width / 2 - 100;
-                overlayHeight = 40;
-                overlayWidth = 200;
+                overlayTop = rect.top + rect.height / 2 - 20;
               } else {
-                // どちらもなければ画面中央
-                overlayTop = window.innerHeight / 2 - 20;
                 overlayLeft = window.innerWidth / 2 - 100;
-                overlayHeight = 40;
-                overlayWidth = 200;
+                overlayTop = window.innerHeight / 2 - 20;
               }
               // 右端はみ出し防止
               const maxWidth = Math.min(400, window.innerWidth * 0.8);
               overlay.style.position = 'fixed';
               overlay.style.top = `${Math.max(0, overlayTop)}px`;
-              // 右端で貫通しないように調整
-              let left = overlayLeft;
-              if (overlayWidth > 0) {
-                if (left + overlayWidth > window.innerWidth - 8) {
-                  left = window.innerWidth - overlayWidth - 8;
-                }
-              } else {
-                // width:autoの場合はmaxWidthで調整
-                if (left + maxWidth > window.innerWidth - 8) {
-                  left = window.innerWidth - maxWidth - 8;
-                }
-              }
-              overlay.style.left = `${Math.max(0, left)}px`;
+              overlay.style.width = 'auto';
+              overlay.style.height = 'auto';
               overlay.style.minWidth = '32px';
               overlay.style.maxWidth = `${maxWidth}px`;
-              overlay.style.height = `${overlayHeight}px`;
-              overlay.style.lineHeight = `${overlayHeight}px`;
+              overlay.style.maxHeight = '200px';
+              overlay.style.overflowY = 'auto';
+              overlay.style.left = `${Math.max(0, Math.min(overlayLeft, window.innerWidth - maxWidth - 8))}px`;
               overlay.style.whiteSpace = 'pre-wrap';
               overlay.style.wordBreak = 'break-word';
               overlay.style.display = 'block';
@@ -293,43 +267,44 @@ const ContentApp: React.FC = () => {
               overlay.style.zIndex = '9999';
               overlay.style.pointerEvents = 'none';
               overlay.textContent = text;
-              lastOverlayText = text;
               overlay.style.visibility = 'visible';
+
               if (isFinal) {
                 // 確定時に挿入
                 const domUtils = new CosenseDOMUtils();
                 domUtils.insertText(text, 'below');
                 overlay?.remove();
                 overlay = null;
-                lastOverlayText = '';
               }
             });
+
             recognition.onEnd(() => {
               isListening = false;
-              if (micBtn) {
-                micBtn.classList.remove('bg-red-500');
-                micBtn.style.background = '';
-              }
               overlay?.remove();
               overlay = null;
             });
           }
+
           if (!isListening) {
             recognition.start();
             isListening = true;
+            // 録音開始時にボタン自体の背景色を柔らかな赤色に
+            const micBtn = document.getElementById('cosense-mic-btn') as HTMLButtonElement | null;
             if (micBtn) {
-              micBtn.classList.add('bg-red-500');
-              micBtn.style.background = '#ff8888'; // 柔らかい赤色
+              micBtn.style.background = '#ff8888';
+              micBtn.style.borderRadius = '30px';
             }
           } else {
             recognition.stop();
             isListening = false;
+            // 録音終了時にボタン自体の背景色を元に戻す
+            const micBtn = document.getElementById('cosense-mic-btn') as HTMLButtonElement | null;
             if (micBtn) {
-              micBtn.classList.remove('bg-red-500');
               micBtn.style.background = '';
+              micBtn.style.borderRadius = '';
             }
           }
-        }
+        },
       });
     };
     const micInterval = setInterval(setupMicButton, 1000);
