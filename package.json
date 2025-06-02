@@ -2,13 +2,12 @@
   "name": "cosense-ai-booster",
   "version": "0.1.0",
   "description": "AI assistant for Cosense (formerly Scrapbox)",
-  "main": ".output/chrome-mv3/background.js",
-  "scripts": {
+  "main": ".output/chrome-mv3/background.js",  "scripts": {
     "build": "wxt build",
     "dev": "wxt dev",
     "serve": "wxt preview",
-    "lint": "eslint '{components,entrypoints,api,hooks,store,utils}/**/*.{ts,tsx}'",
-    "format": "prettier --write '{components,entrypoints,api,hooks,store,utils}/**/*.{ts,tsx,css,html}'",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css,html}'",
     "test": "jest",
     "package": "npm run build && node scripts/package.js",
     "prepare": "wxt prepare"
