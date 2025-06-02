@@ -42,7 +42,8 @@ https://cosen.se/
 
 ## 開発方針
 - node 18で開発する
-- TypeScriptで開発する
+- TypeScript、React、JSX、Tailwind、Zustandで開発する
+- ViteとWXTを使用して開発する
 - ESLintとPrettierを使用してコードを整形する
 - Chrome拡張機能のマニフェストバージョンは3を使用する
 - デザインは、Cosenseのデザインに合わせる

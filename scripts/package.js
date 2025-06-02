@@ -39,8 +39,8 @@ archive.on('error', (err) => {
 // Pipe archive data to the file
 archive.pipe(output);
 
-// Append files from dist directory
-archive.directory('dist/', false);
+// Append files from WXT build directory
+archive.directory('.output/chrome-mv3/', false);
 
 // Catch any errors during the finalization process
 try {

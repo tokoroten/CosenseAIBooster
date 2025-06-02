@@ -1,7 +1,8 @@
-{  "compilerOptions": {
+{  
+  "compilerOptions": {
     "target": "es6",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -10,10 +11,14 @@
     "rootDir": "./src",
     "sourceMap": true,
     "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "react",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "noImplicitAny": false, // 暗黙的なany型を許容
     "noEmitOnError": false, // エラーがあっても出力する
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
