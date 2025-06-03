@@ -223,13 +223,22 @@ export function showErrorDialog(errorMessage: string): HTMLDialogElement {
  */
 export function createResultDialog(
   promptName: string, 
-  selectedText: string
+  selectedText: string,
+  modelName?: string,
+  systemPrompt?: string
 ): HTMLDialogElement {
+  // システムプロンプトの先頭部分を抽出（最初の50文字まで）
+  const systemPromptPreview = systemPrompt 
+    ? (systemPrompt.length > 50 ? systemPrompt.substring(0, 50) + '...' : systemPrompt)
+    : '';
+
   return createDialog({
     content: `
       <div style="font-weight: bold; color: #2196f3;">AI処理中...</div>
       <div style="margin-top:0.5em; font-size:13px; color: #555;">
         <div><strong>システムプロンプト:</strong> ${promptName}</div>
+        ${modelName ? `<div><strong>モデル:</strong> ${modelName}</div>` : ''}
+        ${systemPromptPreview ? `<div><strong>内容:</strong> ${systemPromptPreview}</div>` : ''}
         <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
       </div>
     `,
@@ -246,12 +255,21 @@ export function updateResultDialog(
   result: string,
   insertPosition: 'below' | 'bottom',
   onInsert: (result: string, position: 'below' | 'bottom') => void,
-  onClose: () => void
+  onClose: () => void,
+  modelName?: string,
+  systemPrompt?: string
 ): void {
+  // システムプロンプトの先頭部分を抽出（最初の50文字まで）
+  const systemPromptPreview = systemPrompt 
+    ? (systemPrompt.length > 50 ? systemPrompt.substring(0, 50) + '...' : systemPrompt)
+    : '';
+    
   // ダイアログの内容を更新
   const content = `
     <div style="margin-bottom:0.5em;">
       <div><strong>システムプロンプト:</strong> ${promptName}</div>
+      ${modelName ? `<div><strong>モデル:</strong> ${modelName}</div>` : ''}
+      ${systemPromptPreview ? `<div><strong>内容:</strong> ${systemPromptPreview}</div>` : ''}
       <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
     </div>
     <div style="white-space:pre-wrap; border-top:1px solid #ddd; padding-top:0.5em; margin-bottom: 1em;">

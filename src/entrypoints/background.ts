@@ -136,10 +136,13 @@ export default defineBackground(() => {
           insertPosition: state.insertPosition,
         });
 
+        // 結果をフロントエンドに返送
         return Promise.resolve({
           success: true,
           result,
           promptName: prompt.name,
+          modelName: model,
+          systemPrompt: prompt.systemPrompt,
           insertPosition: state.insertPosition,
         });
       } catch (error) {

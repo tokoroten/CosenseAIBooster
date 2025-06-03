@@ -16,6 +16,8 @@ export interface FrontendSettings {
 export interface PromptProcessResult {
   result: string;
   promptName: string;
+  modelName: string;
+  systemPrompt: string;
   insertPosition: 'below' | 'bottom';
 }
 
@@ -44,11 +46,11 @@ export class FrontendAPIService {
         throw new Error(response?.error || 'バックグラウンドからの応答がありません');
       }
 
-      console.log('[CosenseAIBooster frontend] プロンプト処理完了:', response.promptName);
-
-      return {
+      console.log('[CosenseAIBooster frontend] プロンプト処理完了:', response.promptName);      return {
         result: response.result,
         promptName: response.promptName || '',
+        modelName: response.modelName || '',
+        systemPrompt: response.systemPrompt || '',
         insertPosition: response.insertPosition || 'below',
       };
     } catch (error) {

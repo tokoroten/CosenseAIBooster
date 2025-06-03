@@ -47,9 +47,8 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
     alert('テキストが選択されていません');
     return;
   }
-
   // 結果表示用ダイアログを先に作成
-  const resultDialog = createResultDialog(prompt.name, selected);
+  const resultDialog = createResultDialog(prompt.name, selected, prompt.model, prompt.systemPrompt);
 
   try {
     // デバッグ用の設定情報を表示
@@ -72,11 +71,14 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
         // テキストを挿入
         const domUtils = new CosenseDOMUtils();
         domUtils.insertText(result, position);
-      },      () => {
+      },
+      () => {
         // 閉じるボタンの処理
         // eslint-disable-next-line no-console
         console.log('Dialog closed');
-      }
+      },
+      response.modelName || prompt.model,
+      response.systemPrompt || prompt.systemPrompt
     );
   } catch (error) {
     // エラー処理
