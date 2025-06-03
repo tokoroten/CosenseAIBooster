@@ -10,7 +10,7 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       // For debugging
       if (process.env.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
-        console.log('Loading from storage:', name, result[name] ? 'found' : 'not found');
+        console.log('[CosenseAIBooster backend] Loading from storage:', name, result[name] ? 'found' : 'not found');
       }
       return result[name] || null;
     } catch (error) {

@@ -34,14 +34,15 @@ const ContentApp: React.FC = () => {
     const loadSettings = async () => {
       try {
         // eslint-disable-next-line no-console
-        console.log('バックグラウンドから設定をロードしています...');
+        console.log('[CosenseAIBooster frontend] バックグラウンドから設定をロードしています...');
         // フロントエンドストアのロード関数を実行してバックグラウンドからデータを取得
         await frontendStore.loadSettings();
         // eslint-disable-next-line no-console
-        console.log('フロントエンド設定のロードが完了しました');
+        console.log('[CosenseAIBooster frontend] フロントエンド設定のロードが完了しました');
+        console.log('[CosenseAIBooster frontend] 現在のフロントのセッティング:', useFrontendStore.getState());
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('フロントエンド設定のロード中にエラーが発生しました:', err);
+        console.error('[CosenseAIBooster frontend] フロントエンド設定のロード中にエラーが発生しました:', err);
       }
     };
 

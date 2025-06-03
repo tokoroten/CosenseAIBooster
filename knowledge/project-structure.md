@@ -7,7 +7,6 @@
 ```
 CosenseAIBooster/
 ├─ .eslintrc.json        # ESLint 設定ファイル
-├─ .github/              # GitHub関連のファイル（Actions、Workflows等）
 ├─ .gitignore            # Git除外設定ファイル
 ├─ .output/              # ビルド出力ディレクトリ（gitignore対象）
 ├─ .prettierrc.json      # Prettier 設定ファイル
@@ -19,6 +18,55 @@ CosenseAIBooster/
 ├─ package.json          # npm パッケージ情報
 ├─ package-lock.json     # npm パッケージロック情報
 ├─ postcss.config.js     # PostCSS 設定
+├─ README.md             # プロジェクト説明
+├─ src/                  # ソースコード
+├─ tailwind.config.js    # Tailwind CSS 設定
+├─ tsconfig.json         # TypeScript 設定
+├─ tsconfig.node.json    # Node.js用 TypeScript設定
+└─ wxt.config.ts         # WXT 設定ファイル
+```
+
+## ソースコード構成
+
+```
+src/
+├─ api/                 # API関連のコード
+│  ├─ frontend-service.ts  # フロントエンド用APIサービス
+│  ├─ index.ts          # APIエクスポート
+│  ├─ openai.ts         # OpenAI API呼び出し
+│  └─ service.ts        # バックエンド用サービス
+│
+├─ components/          # Reactコンポーネント
+│  ├─ App.tsx           # アプリのルートコンポーネント
+│  ├─ PromptHandler.tsx # プロンプト処理コンポーネント
+│  ├─ SettingsPanel.tsx # 設定パネルコンポーネント
+│  ├─ SpeechRecognition.tsx # 音声認識コンポーネント
+│  └─ settings/         # 設定パネル関連コンポーネント
+│
+├─ entrypoints/         # エントリーポイント
+│  ├─ background.ts     # バックグラウンドスクリプト
+│  ├─ content.tsx       # コンテンツスクリプト
+│  ├─ options/          # オプションページ
+│  └─ popup/            # ポップアップページ
+│
+├─ hooks/               # カスタムフック
+│  └─ useStorage.ts     # ストレージ用フック
+│
+├─ public/              # 静的ファイル
+│  └─ icon/             # 拡張機能アイコン
+│
+├─ store/               # 状態管理
+│  ├─ chromeStorage.ts  # Chrome Storage ラッパー
+│  ├─ frontend-store.ts # フロントエンド用ストア
+│  └─ index.ts          # ストアエクスポート
+│
+├─ styles/              # スタイル
+│  └─ index.css         # メインCSS
+│
+└─ utils/               # ユーティリティ
+   ├─ react-cosense-dom.ts    # DOM操作ユーティリティ
+   ├─ react-cosense-menu.tsx  # メニュー操作ユーティリティ 
+   └─ react-speech-recognition.ts  # 音声認識ユーティリティ
 ├─ README.md             # プロジェクトの概要説明
 ├─ scripts/              # ビルドスクリプト
 ├─ src/                  # ソースコード

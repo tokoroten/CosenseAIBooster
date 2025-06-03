@@ -168,8 +168,8 @@ const ApiTab: React.FC = () => {
                 <option value="gpt-4o-mini">GPT-4o Mini</option>
                 <option value="gpt-4.1">GPT-4.1</option>
                 <option value="gpt-o1">GPT-o1</option>
-                <option value="gpt-o3">GPT-o3</option>
-                <option value="gpt-o3-mini">GPT-o3 Mini</option>
+                <option value="o3">GPT-o3</option>
+                <option value="o3-mini">GPT-o3 Mini</option>
               </select>
             </div>
           </div>

@@ -57,22 +57,48 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
   // バックグラウンドからデータをロード
   loadSettings: async () => {
     try {
+      // すでにロード中の場合は処理をスキップ（重複呼び出し防止）
+      if (get().isLoading) {
+        // eslint-disable-next-line no-console
+        console.log('ロード中のため、重複リクエストをスキップします');
+        return;
+      }
+
       set({ isLoading: true });
+      // eslint-disable-next-line no-console
+      console.log('バックグラウンドから設定ロード開始 - リクエストID:', Date.now());
 
       // APIサービス経由でバックグラウンドから設定を取得
       const settings = await FrontendAPIService.getFrontendSettings();
 
       if (settings) {
+        // eslint-disable-next-line no-console
+        console.log('バックグラウンド応答があります', {
+          promptCount: settings.prompts?.length,
+          insertPosition: settings.insertPosition,
+          speechLang: settings.speechLang
+        });
+
         // APIキーなどの機密情報を除外して設定を更新
-        set({
-          prompts: settings.prompts || get().prompts,
-          insertPosition: settings.insertPosition || get().insertPosition,
-          speechLang: settings.speechLang || get().speechLang,
-          apiProvider: settings.apiProvider || get().apiProvider,
-          openaiModel: settings.openaiModel || get().openaiModel,
-          openrouterModel: settings.openrouterModel || get().openrouterModel,
-          isLoaded: true,
-          isLoading: false,
+        set((state) => {
+          // デバッグ情報出力（更新前後の差分確認用）
+          const promptsDiff = settings.prompts?.length !== state.prompts.length 
+            ? `${state.prompts.length} -> ${settings.prompts?.length}` 
+            : '変更なし';
+          
+          // eslint-disable-next-line no-console
+          console.log('ストア更新: プロンプト数', promptsDiff);
+
+          return {
+            prompts: settings.prompts || state.prompts,
+            insertPosition: settings.insertPosition || state.insertPosition,
+            speechLang: settings.speechLang || state.speechLang,
+            apiProvider: settings.apiProvider || state.apiProvider,
+            openaiModel: settings.openaiModel || state.openaiModel,
+            openrouterModel: settings.openrouterModel || state.openrouterModel,
+            isLoaded: true,
+            isLoading: false,
+          };
         });
 
         // eslint-disable-next-line no-console
@@ -86,6 +112,12 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
       // eslint-disable-next-line no-console
       console.error('設定の取得中にエラーが発生しました', error);
       set({ isLoaded: true, isLoading: false });
+
+      // エラー詳細を出力（通信エラーのデバッグ用）
+      if (error instanceof Error) {
+        // eslint-disable-next-line no-console
+        console.error('エラー詳細:', error.message, error.stack);
+      }
     }
   },
 }));

@@ -4,6 +4,7 @@ import {
   CosenseDOMUtils,
   addButtonToPopupMenu,
   onPopupMenuShown,
+  clearPopupMenuButtons,
 } from '../utils/react-cosense-dom';
 import { FrontendAPIService } from '../api/frontend-service';
 import { useFrontendStore } from '../store/frontend-store';
@@ -122,9 +123,9 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
   try {
     // デバッグ用の設定情報を表示
     // eslint-disable-next-line no-console
-    console.log('Selected text:', selected);
+    console.log('[CosenseAIBooster frontend] Selected text:', selected);
     // eslint-disable-next-line no-console
-    console.log('Prompt ID:', prompt.id);
+    console.log('[CosenseAIBooster frontend] Prompt ID:', prompt.id);
 
     // フロントエンドサービス経由でバックグラウンドに処理を依頼
     const response = await FrontendAPIService.processPrompt(prompt.id, selected);
@@ -150,47 +151,47 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
 const PromptHandlerComponent: React.FC = () => {
   // フロントエンドストアからプロンプト情報を直接取得
   const frontendStore = useFrontendStore();
-
-  // 初期化時に設定をロード
+  // 設定をロード
   React.useEffect(() => {
-    // フロントエンドストアを使用してプロンプトを初期化
+    // フロントエンドストアを使用してプロンプトを初期化・更新する関数
     const loadPrompts = async () => {
       try {
-        // まずフロントエンドストアの状態を確認
-        if (!(frontendStore.prompts && frontendStore.prompts.length > 0)) {
-          // フロントエンドストアが空ならバックエンドから直接取得
-          // eslint-disable-next-line no-console
-          console.log('バックエンドから直接プロンプトを取得します');
-          await frontendStore.loadSettings();
-        } else {
-          // eslint-disable-next-line no-console
-          console.log('フロントエンドストアからプロンプトを初期化済み:', frontendStore.prompts.length);
-        }
+        // 毎回必ず最新データを取得するように変更
+        // eslint-disable-next-line no-console
+        console.log('[CosenseAIBooster frontend] バックエンドから最新のプロンプトデータを取得します');
+        await frontendStore.loadSettings();
+        // eslint-disable-next-line no-console
+        console.log('[CosenseAIBooster frontend] プロンプトデータ更新完了:', frontendStore.prompts?.length || 0);
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('プロンプト取得エラー:', err);
+        console.error('[CosenseAIBooster frontend] プロンプト取得エラー:', err);
       }
     };
 
-    // 初回ロード
-    loadPrompts();
-
-    // Chrome Storageの変更を直接監視
+    // 常に最新データを取得
+    loadPrompts();// Chrome Storageの変更を直接監視
     const storageChangeHandler = (changes: Record<string, StorageChange>, areaName: string) => {
       if (areaName === 'sync' && changes['cosense-ai-settings']) {
         // eslint-disable-next-line no-console
-        console.log('ストレージ変更を検出、プロンプトを更新します');
+        console.log('[CosenseAIBooster frontend] ストレージ変更を検出、プロンプト更新を開始します');
         
         // ストレージ変更時に即座にプロンプト情報を更新
         void Promise.resolve().then(async () => {
           try {
+            // 更新前のプロンプト数を記録
+            const oldPromptCount = frontendStore.prompts?.length || 0;
+            
             // frontendStoreの設定を更新する（内部でprompts状態も更新される）
             await frontendStore.loadSettings();
+            
+            // 更新後のプロンプト数を取得
+            const newPromptCount = frontendStore.prompts?.length || 0;
+            
             // eslint-disable-next-line no-console
-            console.log('設定変更後の新しいプロンプト:', frontendStore.prompts?.length || 0);
+            console.log(`[CosenseAIBooster frontend] 設定変更後のプロンプト情報を更新しました: ${oldPromptCount} -> ${newPromptCount}`);
           } catch (err) {
             // eslint-disable-next-line no-console
-            console.error('設定変更後のプロンプト取得エラー:', err);
+            console.error('[CosenseAIBooster frontend] 設定変更後のプロンプト取得エラー:', err);
           }
         });
       }
@@ -209,26 +210,71 @@ const PromptHandlerComponent: React.FC = () => {
     };
   }, []);  // プロンプトボタンの設定
   React.useEffect(() => {
-    // ローカルに参照をコピーして、クロージャ内で安全に使用できるようにする
-    const storeRef = frontendStore;
+    // eslint-disable-next-line no-console
+    console.log('[CosenseAIBooster frontend] ポップアップメニューリスナーセットアップ（マウント時）');
+      // 最新のプロンプト情報を強制的に更新する関数
+    const refreshPrompts = async (): Promise<Prompt[]> => {
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[CosenseAIBooster frontend] ポップアップメニュー表示: 最新プロンプトデータを強制取得');
+        
+        // バックエンドから常に最新設定を取得
+        await frontendStore.loadSettings();
+        
+        // 最新の状態を確実に取得
+        const currentState = useFrontendStore.getState();
+        
+        // eslint-disable-next-line no-console
+        console.log(`取得済みプロンプト数: ${currentState.prompts?.length || 0}`);
+        
+        return currentState.prompts || [];
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('プロンプト強制更新エラー:', err);
+        return [];
+      }
+    };
     
     // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(async () => {
       try {
-        // 最新のストア状態を取得
-        const currentPrompts = storeRef.prompts || [];
+        // まずポップアップメニュー表示時に最新のプロンプト情報を強制的に更新
+        const currentPrompts = await refreshPrompts();
         
         // eslint-disable-next-line no-console
-        console.log('ポップアップメニュー表示、最新のプロンプト数:', currentPrompts.length);
+        console.log(`ポップアップメニュー表示、最新のプロンプト数: ${currentPrompts.length}`);
 
-        // 各プロンプトに対してボタンを追加
+        // 既存のプロンプトボタンをクリア
+        clearPopupMenuButtons('cosense-prompt-');
+        
+        if (currentPrompts.length === 0) {
+          // eslint-disable-next-line no-console
+          console.warn('プロンプトが存在しません。ボタンは追加されません。');
+          return;
+        }
+        
+        // 各プロンプトに対して新規にボタンを追加
         currentPrompts.forEach((prompt, index) => {
-          addButtonToPopupMenu({
+          if (!prompt || !prompt.id || !prompt.name) {
+            // eslint-disable-next-line no-console
+            console.warn('不正なプロンプト情報をスキップします', prompt);
+            return;
+          }
+          
+          // eslint-disable-next-line no-console
+          console.log(`ボタン追加: ${prompt.name} (ID: ${prompt.id})`);
+          
+          const result = addButtonToPopupMenu({
             id: `cosense-prompt-${prompt.id}`,
             label: prompt.name,
             className: `cosense-prompt-btn prompt-${index}`,
             onClick: () => processPrompt(prompt),
           });
+          
+          if (!result) {
+            // eslint-disable-next-line no-console
+            console.warn(`ボタン追加失敗: ${prompt.name}`);
+          }
         });
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -237,6 +283,8 @@ const PromptHandlerComponent: React.FC = () => {
     });
 
     return () => {
+      // eslint-disable-next-line no-console
+      console.log('ポップアップメニューリスナーのクリーンアップ');
       disconnect();
     };
   }, []);

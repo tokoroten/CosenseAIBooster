@@ -118,7 +118,6 @@ export const setupSpeechRecognition = (): (() => void) => {
             overlay.style.height = 'auto';
             overlay.style.minWidth = '32px';
             overlay.style.maxWidth = `${maxWidth}px`;
-            overlay.style.maxHeight = '200px';
             overlay.style.overflowY = 'auto';
             overlay.style.left = `${Math.max(0, Math.min(overlayLeft, window.innerWidth - maxWidth - 8))}px`;
             overlay.style.whiteSpace = 'pre-wrap';

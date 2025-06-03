@@ -76,7 +76,7 @@ const defaultSettings: Settings = {
       name: 'ファクトチェック',
       systemPrompt:
         'あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。ソースとなるURLは必ず含めてください。',
-      model: 'gpt-o3',
+      model: 'o3',
     },
   ],
   insertPosition: 'below',
@@ -131,12 +131,12 @@ export const useSettingsStore = create<SettingsState>()(
       setSpeechLang: (speechLang) => set({ speechLang }),
       setApiProvider: (apiProvider) => set({ apiProvider }),
       setOpenaiKey: (openaiKey) => {
-        console.log('Setting OpenAI key:', openaiKey ? '(key set)' : '(empty)');
+        console.log('[CosenseAIBooster backend] Setting OpenAI key:', openaiKey ? '(key set)' : '(empty)');
         return set({ openaiKey });
       },
       setOpenaiModel: (openaiModel) => set({ openaiModel }),
       setOpenrouterKey: (openrouterKey) => {
-        console.log('Setting OpenRouter key:', openrouterKey ? '(key set)' : '(empty)');
+        console.log('[CosenseAIBooster backend] Setting OpenRouter key:', openrouterKey ? '(key set)' : '(empty)');
         return set({ openrouterKey });
       },
       setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),

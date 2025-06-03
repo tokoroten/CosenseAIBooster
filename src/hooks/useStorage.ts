@@ -44,7 +44,7 @@ export class StorageService {
       // 設定が完全に無効な場合、デフォルト設定を使用
       if (!items || !this.isValidSettings(items)) {
         // eslint-disable-next-line no-console
-        console.log('Initializing with default settings');
+        console.log('[CosenseAIBooster backend] Initializing with default settings');
         await this.saveSettings(this.defaultSettings);
         return { ...this.defaultSettings };
       }
@@ -58,7 +58,7 @@ export class StorageService {
     } catch (error) {
       // エラー時はデフォルト設定を使用
       // eslint-disable-next-line no-console
-      console.error('Error initializing settings:', error);
+      console.error('[CosenseAIBooster backend] Error initializing settings:', error);
 
       try {
         await this.saveSettings(this.defaultSettings);
@@ -109,16 +109,16 @@ export class StorageService {
       // 設定が無効な場合はデフォルト設定を返し、バックグラウンドで初期化
       if (!items || !this.isValidSettings(items)) {
         // eslint-disable-next-line no-console
-        console.warn('Invalid settings detected, using defaults');
+        console.warn('[CosenseAIBooster backend] Invalid settings detected, using defaults');
 
         // デフォルト設定をバックグラウンドで保存（非同期）
         try {
           await this.saveSettings(this.defaultSettings);
           // eslint-disable-next-line no-console
-          console.log('Default settings saved successfully');
+          console.log('[CosenseAIBooster backend] Default settings saved successfully');
         } catch (err) {
           // eslint-disable-next-line no-console
-          console.error('Failed to save default settings:', err);
+          console.error('[CosenseAIBooster backend] Failed to save default settings:', err);
         }
 
         // 即座にデフォルト設定のコピーを返す（initializeSettingsは呼ばない）
