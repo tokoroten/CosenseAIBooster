@@ -92,7 +92,7 @@ export class SpeechRecognitionService {
       this.resetPauseDetection();
     };
     this.recognition.onerror = (event: any) => {
-      console.error('Speech Recognition Error:', event.error);
+      console.error('[CosenseAIBooster frontend] Speech Recognition Error:', event.error);
       this.isListening = false;
 
       // エラータイプを保存
