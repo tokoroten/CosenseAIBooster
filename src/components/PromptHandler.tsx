@@ -9,6 +9,8 @@ import {
 import { FrontendAPIService } from '../api/frontend-service';
 import { useFrontendStore } from '../store/frontend-store';
 import { browser } from 'wxt/browser';
+import { createResultDialog, updateResultDialog } from '../utils/dialog-utils';
+import { handleError } from '../utils/error-handling';
 
 // ストレージ変更のインターフェース定義
 interface StorageChange {
@@ -34,114 +36,7 @@ const getSelectedText = (): string => {
   return selected;
 };
 
-/**
- * 結果表示用ダイアログを作成
- */
-const createResultDialog = (promptName: string, selectedText: string): HTMLDialogElement => {
-  const resultDialog = document.createElement('dialog');
-  
-  // スタイルを改善
-  resultDialog.style.padding = '1.5em';
-  resultDialog.style.zIndex = '9999';
-  resultDialog.style.borderRadius = '8px';
-  resultDialog.style.maxWidth = '500px';
-  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-  resultDialog.style.border = 'none';
-  
-  resultDialog.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 1em;">
-      <div style="font-weight: bold; color: #2196f3;">AI処理中...</div>
-      <div style="margin-top:0.5em; font-size:13px; color: #555;">
-        <div><strong>システムプロンプト:</strong> ${promptName}</div>
-        <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(resultDialog);
-  resultDialog.showModal();
-  return resultDialog;
-};
-
-/**
- * 結果表示用ダイアログを更新
- */
-const updateResultDialog = (
-  resultDialog: HTMLDialogElement,
-  promptName: string,
-  selectedText: string,
-  result: string,
-  insertPosition: 'below' | 'bottom'
-): void => {
-  // ダイアログスタイルを再適用（既存のダイアログを更新）
-  resultDialog.style.padding = '1.5em';
-  resultDialog.style.zIndex = '9999';
-  resultDialog.style.borderRadius = '8px';
-  resultDialog.style.maxWidth = '500px';
-  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-  resultDialog.style.border = 'none';
-
-  resultDialog.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 1em;">
-      <div style="margin-bottom:0.5em;">
-        <div><strong>システムプロンプト:</strong> ${promptName}</div>
-        <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
-      </div>
-      <div style="white-space:pre-wrap; border-top:1px solid #ddd; padding-top:0.5em; margin-bottom: 1em;">
-        ${result.replace(/</g, '&lt;')}
-      </div>
-      <div style="display: flex; justify-content: space-between; padding-top: 1em; border-top: 1px solid #eee;">
-        <button id="close-btn" style="padding: 10px 20px; border-radius: 4px; background: #f5f5f5; border: 1px solid #ddd; color: #333; cursor: pointer; min-width: 100px;">閉じる</button>
-        <div style="width: 20px;"></div><!-- スペーサー -->
-        <button id="insert-btn" style="padding: 10px 20px; border-radius: 4px; background: #2196f3; border: none; color: white; cursor: pointer; font-weight: bold; min-width: 140px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Cosenseに挿入</button>
-      </div>
-    </div>
-  `;
-
-  resultDialog.querySelector('#insert-btn')?.addEventListener('click', () => {
-    const domUtils = new CosenseDOMUtils();
-    domUtils.insertText(result, insertPosition);
-    resultDialog.close();
-    resultDialog.remove();
-  });
-
-  resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-    resultDialog.close();
-    resultDialog.remove();
-  });
-};
-
-/**
- * エラー表示用ダイアログを更新
- */
-const showErrorDialog = (resultDialog: HTMLDialogElement, errorMessage?: string): void => {
-  const message = errorMessage ? `AI処理に失敗しました: ${errorMessage}` : 'AI処理に失敗しました';
-  
-  // エラーダイアログにも同じスタイルを適用
-  resultDialog.style.padding = '1.5em';
-  resultDialog.style.zIndex = '9999';
-  resultDialog.style.borderRadius = '8px';
-  resultDialog.style.maxWidth = '500px';
-  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
-  resultDialog.style.border = 'none';
-  
-  resultDialog.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 1em;">
-      <div style="display: flex; align-items: center; gap: 1em;">
-        <div style="font-size: 1.2em; color: #d32f2f;">⚠️</div>
-        <div style="color: #d32f2f; font-weight: bold;">${message}</div>
-      </div>
-      <div style="display: flex; justify-content: flex-end; padding-top: 1em; border-top: 1px solid #eee; margin-top: 1em;">
-        <button id="close-btn" style="padding: 10px 20px; border-radius: 4px; background: #f5f5f5; border: 1px solid #ddd; color: #333; cursor: pointer;">閉じる</button>
-      </div>
-    </div>
-  `;
-
-  resultDialog.querySelector('#close-btn')?.addEventListener('click', () => {
-    resultDialog.close();
-    resultDialog.remove();
-  });
-};
+// ダイアログ関連の関数は dialog-utils.ts に移動しました
 
 /**
  * プロンプト処理を実行
@@ -172,12 +67,24 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
       response.promptName || prompt.name,
       selected,
       response.result,
-      response.insertPosition
+      response.insertPosition,
+      (result, position) => {
+        // テキストを挿入
+        const domUtils = new CosenseDOMUtils();
+        domUtils.insertText(result, position);
+      },      () => {
+        // 閉じるボタンの処理
+        // eslint-disable-next-line no-console
+        console.log('Dialog closed');
+      }
     );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '不明なエラー';
-    // 詳細なエラーメッセージを表示
-    showErrorDialog(resultDialog, errorMessage);
+    // エラー処理
+    handleError(error, 'プロンプト処理中にエラーが発生しました', {
+      level: 'error',
+      showToUser: true,
+      context: { promptId: prompt.id }
+    });
   }
 };
 

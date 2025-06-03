@@ -17,7 +17,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isPopup = false }) => {
   return (
     <div className={isPopup ? '' : 'bg-gray-50 min-h-screen'}>
       <div className={isPopup ? '' : 'max-w-6xl mx-auto py-6'}>
-        <div className={isPopup ? 'bg-white' : 'bg-white shadow rounded-lg'}>
+        <div className={isPopup ? 'bg-white' : 'bg-white shadow rounded-lg'}
+             style={isPopup ? { maxHeight: '600px', overflowY: 'auto' } : {}}>
           <Tabs activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />
           {activeTab === 'prompts' && <PromptsTab />}
           {activeTab === 'general' && <GeneralTab />}

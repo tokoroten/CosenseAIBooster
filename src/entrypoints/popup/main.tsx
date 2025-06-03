@@ -39,16 +39,13 @@ const Popup: React.FC = () => {
       }
     });
   }, []);
-
-
   const toggleSettings = () => {
     setShowSettings(!showSettings);
   };
-  
   return (
     <div
       className="p-4 bg-white text-gray-800"
-      style={{ width: '540px', maxHeight: '720px', overflowY: 'auto' }}
+      style={{ width: '540px', maxHeight: '720px', overflowY: 'hidden' }}
     >
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold">Cosense AI Booster</h1>

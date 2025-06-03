@@ -66,8 +66,7 @@ const defaultSettings: Settings = {
     {
       id: 'default-speech-format',
       name: '音声認識成形',
-      systemPrompt: 
-`あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください
+      systemPrompt: `あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください
 1. 不要な空白や改行、フィラーを削除
 2. 文法的に正しい文章に修正
 3. 意味が通じるように整形
