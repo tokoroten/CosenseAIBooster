@@ -42,13 +42,25 @@ const defaultSettings: Settings = {
     {
       id: 'default-llm',
       name: '汎用',
-      systemPrompt: 'You are helpful assistant.',
+      systemPrompt: `You are helpful assistant.
+出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
+重要な語は[] で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
+`,
       model: 'gpt-4o-mini',
     },
     {
       id: 'default-summary',
       name: '要約',
-      systemPrompt: 'You are a summarization assistant.',
+      systemPrompt: `You are a summarization assistant.
+出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
+重要な語は[] で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
+`
       model: 'gpt-4o-mini',
     },
     {
@@ -77,15 +89,25 @@ const defaultSettings: Settings = {
     {
       id: 'default-knowledge-jp',
       name: '知識（日本語）',
-      systemPrompt:
-        'あなたは与えられたテキストに基づいて、日本語で知識を提供してください。\n出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。',
+      systemPrompt: `あなたは与えられたテキストに基づいて、日本語で知識を提供してください。
+出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
+重要な語は[] で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。`,
       model: 'gpt-4o-mini',
     },
     {
       id: 'default-factcheck-jp',
       name: 'ファクトチェック',
-      systemPrompt:
-        'あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。ソースとなるURLは必ず含めてください。',
+      systemPrompt: `あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。
+ファクトには必ず出典となるURLを含めてください。
+
+出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
+重要な語は[]で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。`,
       model: 'o3',
     },
   ],
