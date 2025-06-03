@@ -10,12 +10,16 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       // For debugging
       if (process.env.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
-        console.log('[CosenseAIBooster backend] Loading from storage:', name, result[name] ? 'found' : 'not found');
+        console.log(
+          '[CosenseAIBooster backend] Loading from storage:',
+          name,
+          result[name] ? 'found' : 'not found'
+        );
       }
       return result[name] || null;
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(`Error retrieving ${name} from chrome.storage.sync:`, error);
+      console.error(`[CosenseAIBooster backend] Error retrieving ${name} from chrome.storage.sync:`, error);
       return null;
     }
   },
@@ -26,11 +30,11 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       // For debugging
       if (process.env.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
-        console.log('Saved to storage:', name);
+        console.log('[CosenseAIBooster backend] Saved to storage:', name);
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(`Error saving ${name} to chrome.storage.sync:`, error);
+      console.error(`[CosenseAIBooster backend] Error saving ${name} to chrome.storage.sync:`, error);
     }
   },
 
@@ -39,7 +43,7 @@ export const chromeStorageApi: PersistStorage<SettingsState> = {
       await browser.storage.sync.remove(name);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(`Error removing ${name} from chrome.storage.sync:`, error);
+      console.error(`[CosenseAIBooster backend] Error removing ${name} from chrome.storage.sync:`, error);
     }
   },
 };
@@ -50,7 +54,7 @@ export async function getStoredSettings() {
     const result = await browser.storage.sync.get(null);
     return result;
   } catch (error) {
-    console.error('Failed to get settings from storage:', error);
+    console.error('[CosenseAIBooster backend] Failed to get settings from storage:', error);
     return null;
   }
 }
@@ -60,6 +64,6 @@ export async function saveToStorage(data: Record<string, any>) {
   try {
     await browser.storage.sync.set(data);
   } catch (error) {
-    console.error('Failed to save settings to storage:', error);
+    console.error('[CosenseAIBooster backend] Failed to save settings to storage:', error);
   }
 }

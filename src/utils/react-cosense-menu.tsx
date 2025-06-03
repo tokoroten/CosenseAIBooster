@@ -72,7 +72,7 @@ export class ReactCosenseMenuManager extends React.Component<MenuManagerProps> {
   componentDidMount() {
     this.container = document.querySelector('.tools');
     if (!this.container) {
-      console.error('Could not find .tools container');
+      console.error('[CosenseAIBooster frontend] Could not find .tools container');
       return;
     }
 

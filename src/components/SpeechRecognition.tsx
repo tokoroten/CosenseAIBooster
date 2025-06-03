@@ -13,7 +13,7 @@ const showPermissionErrorDialog = (): void => {
   errorDialog.style.zIndex = '9999';
   errorDialog.style.borderRadius = '8px';
   errorDialog.style.maxWidth = '400px';
-  
+
   errorDialog.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 1em;">
       <div style="display: flex; align-items: center; gap: 1em;">
@@ -29,10 +29,10 @@ const showPermissionErrorDialog = (): void => {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(errorDialog);
   errorDialog.showModal();
-  
+
   // OKボタンのイベントリスナー
   const okBtn = errorDialog.querySelector('#permission-ok-btn');
   if (okBtn) {
@@ -142,18 +142,19 @@ export const setupSpeechRecognition = (): (() => void) => {
               overlay?.remove();
               overlay = null;
             }
-          });          recognition.onEnd((errorType?: string) => {
+          });
+          recognition.onEnd((errorType?: string) => {
             isListening = false;
             overlay?.remove();
             overlay = null;
-            
+
             // 権限エラーが発生した場合はダイアログを表示
             if (errorType === 'not-allowed') {
               showPermissionErrorDialog();
             }
           });
         }
-        
+
         // ボタンのトグル操作
         if (!isListening) {
           recognition.start();
@@ -164,7 +165,6 @@ export const setupSpeechRecognition = (): (() => void) => {
             micBtn.style.background = '#ff8888';
             micBtn.style.borderRadius = '30px';
           }
-
         } else {
           recognition.stop();
           isListening = false;

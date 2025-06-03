@@ -28,7 +28,7 @@ export default defineContentScript({
 
 // Content App component
 const ContentApp: React.FC = () => {
-  const frontendStore = useFrontendStore();  // 初期化時に設定をロード
+  const frontendStore = useFrontendStore(); // 初期化時に設定をロード
   React.useEffect(() => {
     // 初回のみ設定をロード
     const loadSettings = async () => {
@@ -39,10 +39,16 @@ const ContentApp: React.FC = () => {
         await frontendStore.loadSettings();
         // eslint-disable-next-line no-console
         console.log('[CosenseAIBooster frontend] フロントエンド設定のロードが完了しました');
-        console.log('[CosenseAIBooster frontend] 現在のフロントのセッティング:', useFrontendStore.getState());
+        console.log(
+          '[CosenseAIBooster frontend] 現在のフロントのセッティング:',
+          useFrontendStore.getState()
+        );
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('[CosenseAIBooster frontend] フロントエンド設定のロード中にエラーが発生しました:', err);
+        console.error(
+          '[CosenseAIBooster frontend] フロントエンド設定のロード中にエラーが発生しました:',
+          err
+        );
       }
     };
 

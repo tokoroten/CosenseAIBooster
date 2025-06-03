@@ -29,7 +29,7 @@ export class FrontendAPIService {
    */
   static async processPrompt(promptId: string, selectedText: string): Promise<PromptProcessResult> {
     try {
-      console.log(`プロンプト処理を開始: ID=${promptId}, テキスト長=${selectedText.length}文字`);
+      console.log(`[CosenseAIBooster frontend] プロンプト処理を開始: ID=${promptId}, テキスト長=${selectedText.length}文字`);
 
       // バックグラウンドスクリプトにメッセージを送信
       const response = await browser.runtime.sendMessage({
@@ -40,11 +40,11 @@ export class FrontendAPIService {
 
       // レスポンスの確認
       if (!response || !response.success) {
-        console.error('プロンプト処理エラー:', response?.error);
+        console.error('[CosenseAIBooster frontend] プロンプト処理エラー:', response?.error);
         throw new Error(response?.error || 'バックグラウンドからの応答がありません');
       }
 
-      console.log('プロンプト処理完了:', response.promptName);
+      console.log('[CosenseAIBooster frontend] プロンプト処理完了:', response.promptName);
 
       return {
         result: response.result,
@@ -52,7 +52,7 @@ export class FrontendAPIService {
         insertPosition: response.insertPosition || 'below',
       };
     } catch (error) {
-      console.error('プロンプト処理例外:', error);
+      console.error('[CosenseAIBooster frontend] プロンプト処理例外:', error);
       throw error;
     }
   }
@@ -62,7 +62,7 @@ export class FrontendAPIService {
    */
   static async getFrontendSettings(): Promise<FrontendSettings | null> {
     try {
-      console.log('バックグラウンドから設定を取得中...');
+      console.log('[CosenseAIBooster frontend] バックグラウンドから設定を取得中...');
 
       // バックグラウンドスクリプトにメッセージを送信
       const response = await browser.runtime.sendMessage({
@@ -71,14 +71,14 @@ export class FrontendAPIService {
 
       // レスポンスの確認
       if (!response || !response.success) {
-        console.warn('設定の取得に失敗しました:', response?.error);
+        console.warn('[CosenseAIBooster frontend] 設定の取得に失敗しました:', response?.error);
         return null;
       }
 
-      console.log('フロントエンド設定の取得が完了しました');
+      console.log('[CosenseAIBooster frontend] フロントエンド設定の取得が完了しました');
       return response.frontendSettings;
     } catch (error) {
-      console.error('設定取得中にエラーが発生しました:', error);
+      console.error('[CosenseAIBooster frontend] 設定取得中にエラーが発生しました:', error);
       return null;
     }
   }

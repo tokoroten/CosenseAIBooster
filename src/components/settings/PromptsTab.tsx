@@ -32,12 +32,14 @@ const PromptsTab: React.FC = () => {
     <div className="p-4">
       <div className="flex justify-between mb-4">
         <h2 className="text-lg font-medium">プロンプト管理</h2>
-        <button          onClick={() =>
-            setEditingPrompt({ 
-              id: '', 
-              name: '', 
-              systemPrompt: 'ここにシステムプロンプトを入力してください。\n例：与えられたテキストを要約してください', 
-              model: 'gpt-3.5-turbo' 
+        <button
+          onClick={() =>
+            setEditingPrompt({
+              id: '',
+              name: '',
+              systemPrompt:
+                'ここにシステムプロンプトを入力してください。\n例：与えられたテキストを要約してください',
+              model: 'gpt-3.5-turbo',
             })
           }
           className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"

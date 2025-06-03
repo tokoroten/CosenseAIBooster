@@ -131,12 +131,18 @@ export const useSettingsStore = create<SettingsState>()(
       setSpeechLang: (speechLang) => set({ speechLang }),
       setApiProvider: (apiProvider) => set({ apiProvider }),
       setOpenaiKey: (openaiKey) => {
-        console.log('[CosenseAIBooster backend] Setting OpenAI key:', openaiKey ? '(key set)' : '(empty)');
+        console.log(
+          '[CosenseAIBooster backend] Setting OpenAI key:',
+          openaiKey ? '(key set)' : '(empty)'
+        );
         return set({ openaiKey });
       },
       setOpenaiModel: (openaiModel) => set({ openaiModel }),
       setOpenrouterKey: (openrouterKey) => {
-        console.log('[CosenseAIBooster backend] Setting OpenRouter key:', openrouterKey ? '(key set)' : '(empty)');
+        console.log(
+          '[CosenseAIBooster backend] Setting OpenRouter key:',
+          openrouterKey ? '(key set)' : '(empty)'
+        );
         return set({ openrouterKey });
       },
       setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),

@@ -206,7 +206,12 @@ export class StorageService {
     // 有効なプロンプトが1つ以上あることを確認
     const validPrompts = items.prompts.filter(
       (p: any) =>
-        p && typeof p === 'object' && 'id' in p && 'name' in p && 'systemPrompt' in p && 'model' in p
+        p &&
+        typeof p === 'object' &&
+        'id' in p &&
+        'name' in p &&
+        'systemPrompt' in p &&
+        'model' in p
     );
 
     if (validPrompts.length === 0) {

@@ -76,16 +76,17 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
         console.log('バックグラウンド応答があります', {
           promptCount: settings.prompts?.length,
           insertPosition: settings.insertPosition,
-          speechLang: settings.speechLang
+          speechLang: settings.speechLang,
         });
 
         // APIキーなどの機密情報を除外して設定を更新
         set((state) => {
           // デバッグ情報出力（更新前後の差分確認用）
-          const promptsDiff = settings.prompts?.length !== state.prompts.length 
-            ? `${state.prompts.length} -> ${settings.prompts?.length}` 
-            : '変更なし';
-          
+          const promptsDiff =
+            settings.prompts?.length !== state.prompts.length
+              ? `${state.prompts.length} -> ${settings.prompts?.length}`
+              : '変更なし';
+
           // eslint-disable-next-line no-console
           console.log('ストア更新: プロンプト数', promptsDiff);
 

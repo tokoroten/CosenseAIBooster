@@ -31,7 +31,8 @@ export class SpeechRecognitionService {
   private recognition: SpeechRecognitionAPI | null = null;
   private isListening: boolean = false;
   private finalTranscript: string = '';
-  private interimTranscript: string = '';  private resultCallback: ((text: string, isFinal: boolean) => void) | null = null;
+  private interimTranscript: string = '';
+  private resultCallback: ((text: string, isFinal: boolean) => void) | null = null;
   private endCallback: ((errorType?: string) => void) | null = null;
   private pauseDetectionTimer: number | null = null;
   private pauseTimeout: number = 2000; // 2 seconds of silence to detect a pause
@@ -89,18 +90,20 @@ export class SpeechRecognitionService {
         this.resultCallback(this.interimTranscript, false);
       }
       this.resetPauseDetection();
-    };    this.recognition.onerror = (event: any) => {
+    };
+    this.recognition.onerror = (event: any) => {
       console.error('Speech Recognition Error:', event.error);
       this.isListening = false;
 
       // エラータイプを保存
       const errorType = event.error || 'unknown';
-      
+
       // Call the end callback with error information
       if (this.endCallback) {
         this.endCallback(errorType);
       }
-    };    this.recognition.onend = () => {
+    };
+    this.recognition.onend = () => {
       this.isListening = false;
 
       // Auto-restart if we were still listening

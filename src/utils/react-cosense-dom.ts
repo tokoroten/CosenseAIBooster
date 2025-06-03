@@ -164,7 +164,7 @@ export function addButtonToPopupMenu(options: {
     btn.id = options.id;
     btn.className = 'button' + (options.className ? ' ' + options.className : '');
     btn.textContent = options.label;
-    
+
     // クリックイベントを設定
     if (options.onClick) {
       btn.onclick = (e) => {
@@ -176,10 +176,10 @@ export function addButtonToPopupMenu(options: {
         }, 10);
       };
     }
-    
+
     // DOMに追加
     popupMenu.appendChild(btn);
-    
+
     // eslint-disable-next-line no-console
     console.log('[CosenseAI Booster] Button successfully added to popup menu:', btn);
     return btn;
@@ -223,22 +223,24 @@ export function clearPopupMenuButtons(prefix: string): number {
     const popupMenu = document.querySelector('.popup-menu .button-container');
     if (!popupMenu) {
       // eslint-disable-next-line no-console
-      console.log(`[CosenseAI Booster] No popup menu found when clearing buttons with prefix ${prefix}`);
+      console.log(
+        `[CosenseAI Booster] No popup menu found when clearing buttons with prefix ${prefix}`
+      );
       return 0;
     }
 
     // プレフィックスで始まる全てのボタンを取得
     const buttons = Array.from(popupMenu.querySelectorAll(`[id^="${prefix}"]`));
-    
+
     // eslint-disable-next-line no-console
     console.log(`[CosenseAI Booster] Clearing ${buttons.length} buttons with prefix ${prefix}`);
-    
+
     if (buttons.length === 0) {
       return 0;
     }
-    
+
     // 全てのボタンを削除
-    buttons.forEach(button => {
+    buttons.forEach((button) => {
       try {
         button.remove();
       } catch (err) {
@@ -247,10 +249,10 @@ export function clearPopupMenuButtons(prefix: string): number {
         console.warn(`[CosenseAI Booster] Error removing button ${button.id}:`, err);
       }
     });
-    
+
     // eslint-disable-next-line no-console
     console.log(`[CosenseAI Booster] Successfully cleared ${buttons.length} buttons`);
-    
+
     return buttons.length;
   } catch (error) {
     // eslint-disable-next-line no-console

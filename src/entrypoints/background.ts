@@ -18,7 +18,7 @@ export default defineBackground(() => {
   // メッセージリスナーを設定
   browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log('[CosenseAIBooster backend] メッセージを受信:', request.type, request);
-    
+
     // リクエストタイプに応じた処理
     if (request.type === 'GET_FRONTEND_SETTINGS') {
       // フロントエンド用の設定を提供（APIキーなどの機密情報を除外）
@@ -28,7 +28,7 @@ export default defineBackground(() => {
         console.log('[CosenseAIBooster backend] 現在のストア状態:', {
           promptsCount: state.prompts.length,
           insertPosition: state.insertPosition,
-          apiProvider: state.apiProvider
+          apiProvider: state.apiProvider,
         });
 
         // フロントエンドに安全に送信できる情報のみ抽出
@@ -43,9 +43,9 @@ export default defineBackground(() => {
 
         console.log('[CosenseAIBooster backend] フロントエンド設定を送信:', {
           promptsCount: frontendSettings.prompts.length,
-          insertPosition: frontendSettings.insertPosition
+          insertPosition: frontendSettings.insertPosition,
         });
-        
+
         return Promise.resolve({
           success: true,
           frontendSettings,
@@ -133,9 +133,9 @@ export default defineBackground(() => {
           success: true,
           resultLength: result.length,
           promptName: prompt.name,
-          insertPosition: state.insertPosition
+          insertPosition: state.insertPosition,
         });
-        
+
         return Promise.resolve({
           success: true,
           result,
@@ -170,7 +170,10 @@ export default defineBackground(() => {
 
         // APIキーのチェック
         if (!apiKey) {
-          console.error('[CosenseAIBooster backend] APIキーが設定されていません:', request.provider);
+          console.error(
+            '[CosenseAIBooster backend] APIキーが設定されていません:',
+            request.provider
+          );
           return Promise.resolve({
             success: false,
             error: `APIキーが設定されていません。設定画面で${request.provider}のAPIキーを設定してください。`,

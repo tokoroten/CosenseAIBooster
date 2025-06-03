@@ -27,7 +27,7 @@ const ExperimentalButton: React.FC = () => {
     fontWeight: 'bold',
     display: 'flex',
     alignItems: 'center',
-    gap: '6px'
+    gap: '6px',
   };
 
   // 結果表示ダイアログのスタイル
@@ -43,32 +43,32 @@ const ExperimentalButton: React.FC = () => {
     zIndex: 10000,
     maxWidth: '80%',
     maxHeight: '80%',
-    overflowY: 'auto'
+    overflowY: 'auto',
   };
 
   // 実験用機能を実行する関数
   const runExperiment = async () => {
     setIsLoading(true);
     setResult(null);
-    
+
     try {
       // 1. ストアの現在の状態をログ出力
       console.log('実験開始: 現在のストア状態', {
         prompts: frontendStore.prompts?.length || 0,
         isLoaded: frontendStore.isLoaded,
         speechLang: frontendStore.speechLang,
-        insertPosition: frontendStore.insertPosition
+        insertPosition: frontendStore.insertPosition,
       });
-      
+
       // 2. バックエンドから設定を再取得
       console.log('バックエンドから設定を再取得中...');
       const settings = await FrontendAPIService.getFrontendSettings();
       console.log('バックエンド応答:', settings);
-      
+
       // 3. テスト用メッセージングを実行
       console.log('バックエンドに直接メッセージを送信...');
       const testResponse = await browser.runtime.sendMessage({
-        type: 'GET_FRONTEND_SETTINGS'
+        type: 'GET_FRONTEND_SETTINGS',
       });
       console.log('バックエンドからの直接応答:', testResponse);
 
@@ -78,7 +78,7 @@ const ExperimentalButton: React.FC = () => {
       console.log('設定更新後のストア状態:', {
         prompts: frontendStore.prompts?.length || 0,
         isLoaded: frontendStore.isLoaded,
-        speechLang: frontendStore.speechLang
+        speechLang: frontendStore.speechLang,
       });
 
       // 結果をフォーマットして表示
@@ -100,8 +100,8 @@ const ExperimentalButton: React.FC = () => {
            - フロントエンド設定: ${testResponse?.frontendSettings ? 'あり' : 'なし'}
            
         4. DOM状態:
-           - ポップアップメニュー: ${Boolean(document.querySelector('.popup-menu')) ? 'あり' : 'なし'}
-           - CosenseUIツール: ${Boolean(document.querySelector('.tools')) ? 'あり' : 'なし'}
+           - ポップアップメニュー: ${document.querySelector('.popup-menu') ? 'あり' : 'なし'}
+           - CosenseUIツール: ${document.querySelector('.tools') ? 'あり' : 'なし'}
       `);
     } catch (error) {
       console.error('実験中にエラーが発生:', error);
@@ -130,7 +130,18 @@ const ExperimentalButton: React.FC = () => {
       <button onClick={runExperiment} style={buttonStyle} disabled={isLoading}>
         {isLoading ? (
           <>
-            <span className="loading-spinner" style={{ width: '16px', height: '16px', border: '2px solid #fff', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s linear infinite', display: 'inline-block' }}></span>
+            <span
+              className="loading-spinner"
+              style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid #fff',
+                borderRadius: '50%',
+                borderTopColor: 'transparent',
+                animation: 'spin 1s linear infinite',
+                display: 'inline-block',
+              }}
+            ></span>
             テスト実行中...
           </>
         ) : (
@@ -142,10 +153,30 @@ const ExperimentalButton: React.FC = () => {
         <div style={dialogStyle}>
           <div style={{ whiteSpace: 'pre-wrap', marginBottom: '15px' }}>{result}</div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button onClick={insertToDom} style={{ padding: '8px 12px', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            <button
+              onClick={insertToDom}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#2196F3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
               Cosenseに挿入
             </button>
-            <button onClick={closeDialog} style={{ padding: '8px 12px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+            <button
+              onClick={closeDialog}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: '#f44336',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
               閉じる
             </button>
           </div>
