@@ -49,7 +49,7 @@ const defaultSettings: Settings = {
       id: 'default-speech-format',
       name: '音声認識成形',
       systemPrompt:
-        'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする\n\n以下のテキストを整形してください:\n\n{{text}}',
+        'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする',
       model: 'gpt-4o-mini',
     },
     {
@@ -63,6 +63,20 @@ const defaultSettings: Settings = {
       name: '翻訳（日）',
       systemPrompt: 'あなたは与えられたテキストを日本語に翻訳してください',
       model: 'gpt-4o-mini',
+    },
+    {
+      id: 'default-knowledge-jp',
+      name: '知識（日本語）',
+      systemPrompt:
+        'あなたは与えられたテキストに基づいて、日本語で知識を提供してください。出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。',
+      model: 'gpt-4o-mini',
+    },
+    {
+      id: 'default-factcheck-jp',
+      name: 'ファクトチェック',
+      systemPrompt:
+        'あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。ソースとなるURLは必ず含めてください。',
+      model: 'gpt-o3',
     },
   ],
   insertPosition: 'below',

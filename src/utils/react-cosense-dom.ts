@@ -178,3 +178,23 @@ export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void):
   console.log('[CosenseAI Booster] onPopupMenuShown observer set');
   return () => observer.disconnect();
 }
+
+/**
+ * 選択範囲ポップアップメニューから特定のプレフィックスを持つボタンを全て削除
+ * @param prefix ボタンIDのプレフィックス
+ */
+export function clearPopupMenuButtons(prefix: string): void {
+  const popupMenu = document.querySelector('.popup-menu .button-container');
+  if (!popupMenu) return;
+
+  // プレフィックスで始まる全てのボタンを取得
+  const buttons = Array.from(popupMenu.querySelectorAll(`[id^="${prefix}"]`));
+  
+  // eslint-disable-next-line no-console
+  console.log(`[CosenseAI Booster] Clearing ${buttons.length} buttons with prefix ${prefix}`);
+  
+  // 全てのボタンを削除
+  buttons.forEach(button => {
+    button.remove();
+  });
+}

@@ -31,9 +31,8 @@ export class SpeechRecognitionService {
   private recognition: SpeechRecognitionAPI | null = null;
   private isListening: boolean = false;
   private finalTranscript: string = '';
-  private interimTranscript: string = '';
-  private resultCallback: ((text: string, isFinal: boolean) => void) | null = null;
-  private endCallback: (() => void) | null = null;
+  private interimTranscript: string = '';  private resultCallback: ((text: string, isFinal: boolean) => void) | null = null;
+  private endCallback: ((errorType?: string) => void) | null = null;
   private pauseDetectionTimer: number | null = null;
   private pauseTimeout: number = 2000; // 2 seconds of silence to detect a pause
 
@@ -90,19 +89,18 @@ export class SpeechRecognitionService {
         this.resultCallback(this.interimTranscript, false);
       }
       this.resetPauseDetection();
-    };
-
-    this.recognition.onerror = (event: any) => {
+    };    this.recognition.onerror = (event: any) => {
       console.error('Speech Recognition Error:', event.error);
       this.isListening = false;
 
-      // Call the end callback
+      // エラータイプを保存
+      const errorType = event.error || 'unknown';
+      
+      // Call the end callback with error information
       if (this.endCallback) {
-        this.endCallback();
+        this.endCallback(errorType);
       }
-    };
-
-    this.recognition.onend = () => {
+    };    this.recognition.onend = () => {
       this.isListening = false;
 
       // Auto-restart if we were still listening
@@ -110,7 +108,7 @@ export class SpeechRecognitionService {
       if (this.isListening) {
         this.start();
       } else if (this.endCallback) {
-        this.endCallback();
+        this.endCallback(); // エラーがない場合は引数なしで呼び出す
       }
     };
   }
@@ -170,12 +168,11 @@ export class SpeechRecognitionService {
   onResult(callback: (text: string, isFinal: boolean) => void): void {
     this.resultCallback = callback;
   }
-
   /**
    * Set the callback for when speech recognition ends
-   * @param callback Function to call when speech recognition ends
+   * @param callback Function to call when speech recognition ends, with optional error type
    */
-  onEnd(callback: () => void): void {
+  onEnd(callback: (errorType?: string) => void): void {
     this.endCallback = callback;
   }
 

@@ -6,7 +6,7 @@ import '../styles/index.css';
 
 // Import the components from the components folder
 import { SpeechRecognitionComponent } from '../components/SpeechRecognition';
-import { PromptHandlerComponent } from '../components/PromptHandler';
+import PromptHandlerComponent from '../components/PromptHandler';
 import { useFrontendStore } from '../store/frontend-store';
 
 export default defineContentScript({
@@ -28,18 +28,20 @@ export default defineContentScript({
 
 // Content App component
 const ContentApp: React.FC = () => {
-  const frontendStore = useFrontendStore;
-
+  const frontendStore = useFrontendStore();
   // 初期化時に設定をロード
   React.useEffect(() => {
     // 初回のみ設定をロード
     const loadSettings = async () => {
       try {
+        // eslint-disable-next-line no-console
         console.log('バックグラウンドから設定をロードしています...');
         // フロントエンドストアのロード関数を実行してバックグラウンドからデータを取得
-        await frontendStore.getState().loadSettings();
+        await frontendStore.loadSettings();
+        // eslint-disable-next-line no-console
         console.log('フロントエンド設定のロードが完了しました');
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('フロントエンド設定のロード中にエラーが発生しました:', err);
       }
     };

@@ -5,6 +5,45 @@ import { useFrontendStore } from '../store/frontend-store';
 import { CosenseDOMUtils } from '../utils/react-cosense-dom';
 
 /**
+ * マイク権限エラーを表示するダイアログ
+ */
+const showPermissionErrorDialog = (): void => {
+  const errorDialog = document.createElement('dialog');
+  errorDialog.style.padding = '1.5em';
+  errorDialog.style.zIndex = '9999';
+  errorDialog.style.borderRadius = '8px';
+  errorDialog.style.maxWidth = '400px';
+  
+  errorDialog.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 1em;">
+      <div style="display: flex; align-items: center; gap: 1em;">
+        <div style="font-size: 2em;">🎤❌</div>
+        <h3 style="margin: 0; color: #d32f2f;">マイクの使用が許可されていません</h3>
+      </div>
+      <p>
+        CosenseAIBoosterが音声認識機能を使用するには、マイクへのアクセス許可が必要です。
+        ブラウザの設定からマイクの使用を許可してください。
+      </p>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1em;">
+        <button id="permission-ok-btn" style="padding: 8px 16px; border-radius: 4px; background: #2196f3; color: white; border: none; cursor: pointer;">OK</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(errorDialog);
+  errorDialog.showModal();
+  
+  // OKボタンのイベントリスナー
+  const okBtn = errorDialog.querySelector('#permission-ok-btn');
+  if (okBtn) {
+    okBtn.addEventListener('click', () => {
+      errorDialog.close();
+      errorDialog.remove();
+    });
+  }
+};
+
+/**
  * 音声認識サービスを設定してページに音声入力ボタンを追加する
  */
 export const setupSpeechRecognition = (): (() => void) => {
@@ -104,12 +143,15 @@ export const setupSpeechRecognition = (): (() => void) => {
               overlay?.remove();
               overlay = null;
             }
-          });
-
-          recognition.onEnd(() => {
+          });          recognition.onEnd((errorType?: string) => {
             isListening = false;
             overlay?.remove();
             overlay = null;
+            
+            // 権限エラーが発生した場合はダイアログを表示
+            if (errorType === 'not-allowed') {
+              showPermissionErrorDialog();
+            }
           });
         }
         

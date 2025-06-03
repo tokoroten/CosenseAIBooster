@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { Prompt } from '../hooks/useStorage';
 import { FrontendAPIService } from '../api/frontend-service';
+import { browser } from 'wxt/browser';
 
 // フロントエンド用の状態型定義（APIキーなどを含まない）
 interface FrontendState {
@@ -75,14 +76,34 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
           isLoading: false,
         });
 
+        // eslint-disable-next-line no-console
         console.log('フロントエンド設定をバックグラウンドから読み込みました');
       } else {
+        // eslint-disable-next-line no-console
         console.warn('バックグラウンドからの設定取得に失敗しました、デフォルト値を使用します');
         set({ isLoaded: true, isLoading: false });
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('設定の取得中にエラーが発生しました', error);
       set({ isLoaded: true, isLoading: false });
     }
   },
 }));
+
+// ストレージの変更を監視し、設定が変更されたらフロントエンドストアを更新する
+if (typeof browser !== 'undefined' && browser.storage) {
+  browser.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'sync' && changes['cosense-ai-settings']) {
+      // eslint-disable-next-line no-console
+      console.log('設定の変更を検出しました、フロントエンド設定を更新します');
+      
+      // 変更があった場合、フロントエンド設定を再ロード
+      const state = useFrontendStore.getState();
+      // 非同期関数の呼び出しをPromiseでラップして安全に実行
+      void Promise.resolve().then(async () => {
+        await state.loadSettings();
+      });
+    }
+  });
+}

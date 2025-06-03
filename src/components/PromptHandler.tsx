@@ -6,6 +6,14 @@ import {
   onPopupMenuShown,
 } from '../utils/react-cosense-dom';
 import { FrontendAPIService } from '../api/frontend-service';
+import { useFrontendStore } from '../store/frontend-store';
+import { browser } from 'wxt/browser';
+
+// ストレージ変更のインターフェース定義
+interface StorageChange {
+  oldValue?: any;
+  newValue?: any;
+}
 
 /**
  * 選択テキストを取得する
@@ -140,18 +148,26 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
  * プロンプト処理のReactコンポーネント
  */
 const PromptHandlerComponent: React.FC = () => {
-  const [prompts, setPrompts] = React.useState<Prompt[]>([]);
+  // フロントエンドストアからプロンプト情報を直接取得
+  const frontendStore = useFrontendStore();
 
-  // 初期化時に設定をバックエンドから直接ロード
+  // 初期化時に設定をロード
   React.useEffect(() => {
+    // フロントエンドストアを使用してプロンプトを初期化
     const loadPrompts = async () => {
       try {
-        // バックエンドから直接設定を取得
-        const settings = await FrontendAPIService.getFrontendSettings();
-        if (settings && settings.prompts) {
-          setPrompts(settings.prompts);
+        // まずフロントエンドストアの状態を確認
+        if (!(frontendStore.prompts && frontendStore.prompts.length > 0)) {
+          // フロントエンドストアが空ならバックエンドから直接取得
+          // eslint-disable-next-line no-console
+          console.log('バックエンドから直接プロンプトを取得します');
+          await frontendStore.loadSettings();
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('フロントエンドストアからプロンプトを初期化済み:', frontendStore.prompts.length);
         }
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('プロンプト取得エラー:', err);
       }
     };
@@ -159,22 +175,53 @@ const PromptHandlerComponent: React.FC = () => {
     // 初回ロード
     loadPrompts();
 
-    // 定期的に更新（30秒ごと）
-    const intervalId = setInterval(loadPrompts, 30000);
+    // Chrome Storageの変更を直接監視
+    const storageChangeHandler = (changes: Record<string, StorageChange>, areaName: string) => {
+      if (areaName === 'sync' && changes['cosense-ai-settings']) {
+        // eslint-disable-next-line no-console
+        console.log('ストレージ変更を検出、プロンプトを更新します');
+        
+        // ストレージ変更時に即座にプロンプト情報を更新
+        void Promise.resolve().then(async () => {
+          try {
+            // frontendStoreの設定を更新する（内部でprompts状態も更新される）
+            await frontendStore.loadSettings();
+            // eslint-disable-next-line no-console
+            console.log('設定変更後の新しいプロンプト:', frontendStore.prompts?.length || 0);
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('設定変更後のプロンプト取得エラー:', err);
+          }
+        });
+      }
+    };
+
+    // ストレージ変更リスナーを登録
+    if (typeof browser !== 'undefined' && browser.storage) {
+      browser.storage.onChanged.addListener(storageChangeHandler);
+    }
 
     return () => {
-      clearInterval(intervalId);
+      // クリーンアップ時にリスナーを削除
+      if (typeof browser !== 'undefined' && browser.storage) {
+        browser.storage.onChanged.removeListener(storageChangeHandler);
+      }
     };
-  }, []);
-
+  }, [frontendStore]);
   // プロンプトボタンの設定
   React.useEffect(() => {
     // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(async () => {
       try {
-        // ポップアップ表示時に最新のプロンプトを取得
-        const settings = await FrontendAPIService.getFrontendSettings();
-        const currentPrompts = settings?.prompts || prompts;
+        // ポップアップ表示のたびに最新のプロンプトを取得する
+        // 一度バックエンドから最新データを強制的に読み込む
+        await frontendStore.loadSettings();
+        
+        // フロントエンドストアから最新のプロンプトを取得
+        const currentPrompts = frontendStore.prompts || [];
+        
+        // eslint-disable-next-line no-console
+        console.log('ポップアップメニュー表示、最新のプロンプト数:', currentPrompts.length);
 
         // 各プロンプトに対してボタンを追加
         currentPrompts.forEach((prompt, index) => {
@@ -186,26 +233,19 @@ const PromptHandlerComponent: React.FC = () => {
           });
         });
       } catch (err) {
-        console.error('ポップアップメニュー表示時のプロンプト取得エラー:', err);
-
-        // エラー時は現在のプロンプトリストを使用
-        prompts.forEach((prompt, index) => {
-          addButtonToPopupMenu({
-            id: `cosense-prompt-${prompt.id}`,
-            label: prompt.name,
-            className: `cosense-prompt-btn prompt-${index}`,
-            onClick: () => processPrompt(prompt),
-          });
-        });
+        // eslint-disable-next-line no-console
+        console.error('ポップアップメニュー表示時のプロンプト処理エラー:', err);
       }
     });
 
     return () => {
       disconnect();
     };
-  }, [prompts]);
+  }, [frontendStore, frontendStore.prompts]);
+  
   return null;
 };
 
 export default PromptHandlerComponent;
+// コンポーネントを名前付きでエクスポート
 export { PromptHandlerComponent };
