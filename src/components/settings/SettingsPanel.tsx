@@ -17,12 +17,18 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isPopup = false }) => {
   return (
     <div className={isPopup ? '' : 'bg-gray-50 min-h-screen'}>
       <div className={isPopup ? '' : 'max-w-6xl mx-auto py-6'}>
-        <div className={isPopup ? 'bg-white' : 'bg-white shadow rounded-lg'}
-             style={isPopup ? { maxHeight: '600px', overflowY: 'auto' } : {}}>
-          <Tabs activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />
-          {activeTab === 'prompts' && <PromptsTab />}
-          {activeTab === 'general' && <GeneralTab />}
-          {activeTab === 'api' && <ApiTab />}
+        <div 
+          className={isPopup ? 'bg-white flex flex-col' : 'bg-white shadow rounded-lg'}
+          style={isPopup ? { height: '500px' } : {}}
+        >
+          <div className="flex-shrink-0">
+            <Tabs activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />
+          </div>
+          <div className="flex-grow overflow-auto">
+            {activeTab === 'prompts' && <PromptsTab />}
+            {activeTab === 'general' && <GeneralTab />}
+            {activeTab === 'api' && <ApiTab />}
+          </div>
         </div>
       </div>
     </div>

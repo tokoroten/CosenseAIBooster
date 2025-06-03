@@ -45,7 +45,7 @@ const Popup: React.FC = () => {
   return (
     <div
       className="p-4 bg-white text-gray-800"
-      style={{ width: '540px', maxHeight: '720px', overflowY: 'hidden' }}
+      style={{ width: '540px', height: '600px', display: 'flex', flexDirection: 'column' }}
     >
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-semibold">Cosense AI Booster</h1>
@@ -61,7 +61,7 @@ const Popup: React.FC = () => {
       </div>
 
       {!showSettings ? (
-        <>
+        <div className="flex-grow overflow-auto">
           {status === 'active' ? (
             <>
               <p className="text-sm text-gray-600 mb-3">拡張機能がアクティブです</p>
@@ -89,20 +89,13 @@ const Popup: React.FC = () => {
           >
             設定を開く
           </button>
-        </>
+        </div>
       ) : (
-        <>
-          {' '}
-          <div className="bg-white rounded-lg">
+        <div className="flex flex-col flex-grow">
+          <div className="bg-white rounded-lg flex-grow overflow-hidden">
             <SettingsPanel isPopup={true} />
           </div>
-          <button
-            onClick={toggleSettings}
-            className="block w-full py-2 px-3 mt-4 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm"
-          >
-            戻る
-          </button>
-        </>
+        </div>
       )}
     </div>
   );

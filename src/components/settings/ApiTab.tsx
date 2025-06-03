@@ -89,9 +89,8 @@ const ApiTab: React.FC = () => {
       setVerifying(false);
     }
   };
-
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 h-full">
       <div>
         <h3 className="text-lg font-medium">API プロバイダー</h3>
         <div className="mt-2 space-y-2">
