@@ -39,13 +39,25 @@ const getSelectedText = (): string => {
  */
 const createResultDialog = (promptName: string, selectedText: string): HTMLDialogElement => {
   const resultDialog = document.createElement('dialog');
+  
+  // スタイルを改善
   resultDialog.style.padding = '1.5em';
   resultDialog.style.zIndex = '9999';
-  resultDialog.innerHTML = `<div>AI処理中...</div>
-    <div style="margin-top:0.5em;font-size:12px;">
-      <div><strong>システムプロンプト:</strong> ${promptName}</div>
-      <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
-    </div>`;
+  resultDialog.style.borderRadius = '8px';
+  resultDialog.style.maxWidth = '500px';
+  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+  resultDialog.style.border = 'none';
+  
+  resultDialog.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 1em;">
+      <div style="font-weight: bold; color: #2196f3;">AI処理中...</div>
+      <div style="margin-top:0.5em; font-size:13px; color: #555;">
+        <div><strong>システムプロンプト:</strong> ${promptName}</div>
+        <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
+      </div>
+    </div>
+  `;
+  
   document.body.appendChild(resultDialog);
   resultDialog.showModal();
   return resultDialog;
@@ -61,18 +73,28 @@ const updateResultDialog = (
   result: string,
   insertPosition: 'below' | 'bottom'
 ): void => {
+  // ダイアログスタイルを再適用（既存のダイアログを更新）
+  resultDialog.style.padding = '1.5em';
+  resultDialog.style.zIndex = '9999';
+  resultDialog.style.borderRadius = '8px';
+  resultDialog.style.maxWidth = '500px';
+  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+  resultDialog.style.border = 'none';
+
   resultDialog.innerHTML = `
-    <div style="margin-bottom:0.5em;">
-      <div><strong>システムプロンプト:</strong> ${promptName}</div>
-      <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
-    </div>
-    <div style="white-space:pre-wrap;max-width:500px;border-top:1px solid #ddd;padding-top:0.5em;">${result.replace(
-      /</g,
-      '&lt;'
-    )}</div>
-    <div style="margin-top:1em;">
-      <button id="insert-btn">Cosenseに挿入</button> 
-      <button id="close-btn">閉じる</button>
+    <div style="display: flex; flex-direction: column; gap: 1em;">
+      <div style="margin-bottom:0.5em;">
+        <div><strong>システムプロンプト:</strong> ${promptName}</div>
+        <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
+      </div>
+      <div style="white-space:pre-wrap; border-top:1px solid #ddd; padding-top:0.5em; margin-bottom: 1em;">
+        ${result.replace(/</g, '&lt;')}
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: 1em; border-top: 1px solid #eee;">
+        <button id="close-btn" style="padding: 10px 20px; border-radius: 4px; background: #f5f5f5; border: 1px solid #ddd; color: #333; cursor: pointer; min-width: 100px;">閉じる</button>
+        <div style="width: 20px;"></div><!-- スペーサー -->
+        <button id="insert-btn" style="padding: 10px 20px; border-radius: 4px; background: #2196f3; border: none; color: white; cursor: pointer; font-weight: bold; min-width: 140px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">Cosenseに挿入</button>
+      </div>
     </div>
   `;
 
@@ -94,10 +116,24 @@ const updateResultDialog = (
  */
 const showErrorDialog = (resultDialog: HTMLDialogElement, errorMessage?: string): void => {
   const message = errorMessage ? `AI処理に失敗しました: ${errorMessage}` : 'AI処理に失敗しました';
+  
+  // エラーダイアログにも同じスタイルを適用
+  resultDialog.style.padding = '1.5em';
+  resultDialog.style.zIndex = '9999';
+  resultDialog.style.borderRadius = '8px';
+  resultDialog.style.maxWidth = '500px';
+  resultDialog.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+  resultDialog.style.border = 'none';
+  
   resultDialog.innerHTML = `
-    <div style="color:red;">${message}</div>
-    <div style="margin-top:1em;">
-      <button id="close-btn">閉じる</button>
+    <div style="display: flex; flex-direction: column; gap: 1em;">
+      <div style="display: flex; align-items: center; gap: 1em;">
+        <div style="font-size: 1.2em; color: #d32f2f;">⚠️</div>
+        <div style="color: #d32f2f; font-weight: bold;">${message}</div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; padding-top: 1em; border-top: 1px solid #eee; margin-top: 1em;">
+        <button id="close-btn" style="padding: 10px 20px; border-radius: 4px; background: #f5f5f5; border: 1px solid #ddd; color: #333; cursor: pointer;">閉じる</button>
+      </div>
     </div>
   `;
 
