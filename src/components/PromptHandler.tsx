@@ -11,8 +11,8 @@ import { browser } from 'wxt/browser';
 
 // ストレージ変更のインターフェース定義
 interface StorageChange {
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
 }
 
 /**
@@ -207,18 +207,16 @@ const PromptHandlerComponent: React.FC = () => {
         browser.storage.onChanged.removeListener(storageChangeHandler);
       }
     };
-  }, [frontendStore]);
-  // プロンプトボタンの設定
+  }, []);  // プロンプトボタンの設定
   React.useEffect(() => {
+    // ローカルに参照をコピーして、クロージャ内で安全に使用できるようにする
+    const storeRef = frontendStore;
+    
     // ポップアップメニュー表示時にプロンプトごとのボタンを追加
     const disconnect = onPopupMenuShown(async () => {
       try {
-        // ポップアップ表示のたびに最新のプロンプトを取得する
-        // 一度バックエンドから最新データを強制的に読み込む
-        await frontendStore.loadSettings();
-        
-        // フロントエンドストアから最新のプロンプトを取得
-        const currentPrompts = frontendStore.prompts || [];
+        // 最新のストア状態を取得
+        const currentPrompts = storeRef.prompts || [];
         
         // eslint-disable-next-line no-console
         console.log('ポップアップメニュー表示、最新のプロンプト数:', currentPrompts.length);
@@ -241,7 +239,7 @@ const PromptHandlerComponent: React.FC = () => {
     return () => {
       disconnect();
     };
-  }, [frontendStore, frontendStore.prompts]);
+  }, []);
   
   return null;
 };

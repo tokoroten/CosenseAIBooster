@@ -28,8 +28,7 @@ export default defineContentScript({
 
 // Content App component
 const ContentApp: React.FC = () => {
-  const frontendStore = useFrontendStore();
-  // 初期化時に設定をロード
+  const frontendStore = useFrontendStore();  // 初期化時に設定をロード
   React.useEffect(() => {
     // 初回のみ設定をロード
     const loadSettings = async () => {
