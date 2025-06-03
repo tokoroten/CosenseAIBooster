@@ -5,15 +5,6 @@
 
 export class CosenseDOMUtils {
   /**
-   * Get the selected text from the Cosense page
-   * @returns The selected text or an empty string if none
-   */
-  getSelectedText(): string {
-    const selection = window.getSelection();
-    return selection ? selection.toString().trim() : '';
-  }
-
-  /**
    * Insert text into the Cosense editor
    * @param text Text to insert
    * @param position 'below' to insert below selection, 'bottom' to insert at page bottom
@@ -40,57 +31,6 @@ export class CosenseDOMUtils {
     }
     // 変更を反映させるためにinputイベントを発火
     textInput.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  /**
-   * Insert text at the bottom of the page
-   * @param lines Array of lines to insert
-   */
-  private insertAtBottom(lines: string[]): void {
-    this.insertText(lines.join('\n'), 'bottom');
-  }
-
-  /**
-   * Insert text below the current selection
-   * @param lines Array of lines to insert
-   */
-  private insertBelowSelection(lines: string[]): void {
-    this.insertText(lines.join('\n'), 'below');
-  }
-
-  /**
-   * Insert text at the current cursor position
-   * @param text Text to insert
-   */
-  private insertTextAtCursor(text: string): void {
-    document.execCommand('insertText', false, text);
-  }
-
-  /**
-   * Simulate a key press
-   * @param key Key to press (e.g., 'Enter', 'End')
-   */
-  private pressKey(key: string): void {
-    const keyEvent = new KeyboardEvent('keydown', {
-      key,
-      code: key,
-      bubbles: true,
-      cancelable: true,
-    });
-    document.activeElement?.dispatchEvent(keyEvent);
-  }
-
-  /**
-   * Click on an element
-   * @param element Element to click
-   */
-  private clickElement(element: Element): void {
-    const event = new MouseEvent('click', {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    });
-    element.dispatchEvent(event);
   }
 }
 
