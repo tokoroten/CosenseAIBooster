@@ -22,17 +22,21 @@ export class CosenseDOMUtils {
     const textInput = document.getElementById('text-input') as HTMLTextAreaElement | null;
     if (!textInput) {
       // eslint-disable-next-line no-console
-      console.error('text-input element not found');
+      console.error('[CosenseAIBooster frontend] text-input element not found');
       return;
     }
     if (position === 'bottom') {
-      // 末尾へ挿入
-      textInput.value += text;
+      // 末尾へ挿入（改行を追加してから挿入）
+      const needsLineBreak = textInput.value.length > 0 && !textInput.value.endsWith('\n');
+      textInput.value += (needsLineBreak ? '\n' : '') + text;
     } else {
-      // 選択範囲の下に挿入
+      // 選択範囲の下に挿入（次の行に挿入）
       const selectionEnd = textInput.selectionEnd ?? textInput.value.length;
-      textInput.value =
-        textInput.value.slice(0, selectionEnd) + text + textInput.value.slice(selectionEnd);
+      const textBefore = textInput.value.slice(0, selectionEnd);
+      const textAfter = textInput.value.slice(selectionEnd);
+      const needsLineBreak = textBefore.length > 0 && !textBefore.endsWith('\n');
+      
+      textInput.value = textBefore + (needsLineBreak ? '\n' : '') + text + textAfter;
     }
     // 変更を反映させるためにinputイベントを発火
     textInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -135,11 +139,11 @@ export function addButtonToPopupMenu(options: {
 }): HTMLDivElement | null {
   try {
     // eslint-disable-next-line no-console
-    console.log('[CosenseAI Booster] addButtonToPopupMenu called', options);
+    console.log('[CosenseAIBooster frontend] addButtonToPopupMenu called', options);
 
     if (!options || !options.id || !options.label) {
       // eslint-disable-next-line no-console
-      console.error('[CosenseAI Booster] Invalid options provided', options);
+      console.error('[CosenseAIBooster frontend] Invalid options provided', options);
       return null;
     }
 
@@ -147,7 +151,7 @@ export function addButtonToPopupMenu(options: {
     const popupMenu = document.querySelector('.popup-menu .button-container');
     if (!popupMenu) {
       // eslint-disable-next-line no-console
-      console.log('[CosenseAI Booster] .popup-menu .button-container not found');
+      console.log('[CosenseAIBooster frontend] .popup-menu .button-container not found');
       return null;
     }
 
@@ -155,7 +159,7 @@ export function addButtonToPopupMenu(options: {
     const existingButton = document.getElementById(options.id);
     if (existingButton) {
       // eslint-disable-next-line no-console
-      console.log('[CosenseAI Booster] Removing existing button:', options.id);
+      console.log('[CosenseAIBooster frontend] Removing existing button:', options.id);
       existingButton.remove();
     }
 
@@ -181,11 +185,11 @@ export function addButtonToPopupMenu(options: {
     popupMenu.appendChild(btn);
 
     // eslint-disable-next-line no-console
-    console.log('[CosenseAI Booster] Button successfully added to popup menu:', btn);
+    console.log('[CosenseAIBooster frontend] Button successfully added to popup menu:', btn);
     return btn;
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('[CosenseAI Booster] Error adding button to popup menu:', error);
+    console.error('[CosenseAIBooster frontend] Error adding button to popup menu:', error);
     return null;
   }
 }
@@ -202,13 +206,13 @@ export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void):
     if (popup && popup !== lastPopup) {
       lastPopup = popup;
       // eslint-disable-next-line no-console
-      console.log('[CosenseAI Booster] .popup-menu shown:', popup);
+      console.log('[CosenseAIBooster frontend] .popup-menu shown:', popup);
       callback(popup);
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
   // eslint-disable-next-line no-console
-  console.log('[CosenseAI Booster] onPopupMenuShown observer set');
+  console.log('[CosenseAIBooster frontend] onPopupMenuShown observer set');
   return () => observer.disconnect();
 }
 
@@ -224,7 +228,7 @@ export function clearPopupMenuButtons(prefix: string): number {
     if (!popupMenu) {
       // eslint-disable-next-line no-console
       console.log(
-        `[CosenseAI Booster] No popup menu found when clearing buttons with prefix ${prefix}`
+        `[CosenseAIBooster frontend] No popup menu found when clearing buttons with prefix ${prefix}`
       );
       return 0;
     }
@@ -233,7 +237,7 @@ export function clearPopupMenuButtons(prefix: string): number {
     const buttons = Array.from(popupMenu.querySelectorAll(`[id^="${prefix}"]`));
 
     // eslint-disable-next-line no-console
-    console.log(`[CosenseAI Booster] Clearing ${buttons.length} buttons with prefix ${prefix}`);
+    console.log(`[CosenseAIBooster frontend] Clearing ${buttons.length} buttons with prefix ${prefix}`);
 
     if (buttons.length === 0) {
       return 0;
@@ -246,17 +250,17 @@ export function clearPopupMenuButtons(prefix: string): number {
       } catch (err) {
         // 個別のボタン削除エラーは全体の処理を止めない
         // eslint-disable-next-line no-console
-        console.warn(`[CosenseAI Booster] Error removing button ${button.id}:`, err);
+        console.warn(`[CosenseAIBooster frontend] Error removing button ${button.id}:`, err);
       }
     });
 
     // eslint-disable-next-line no-console
-    console.log(`[CosenseAI Booster] Successfully cleared ${buttons.length} buttons`);
+    console.log(`[CosenseAIBooster frontend] Successfully cleared ${buttons.length} buttons`);
 
     return buttons.length;
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`[CosenseAI Booster] Error clearing buttons with prefix ${prefix}:`, error);
+    console.error(`[CosenseAIBooster frontend] Error clearing buttons with prefix ${prefix}:`, error);
     return 0;
   }
 }
