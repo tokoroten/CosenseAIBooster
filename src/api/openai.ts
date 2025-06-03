@@ -65,10 +65,14 @@ export class OpenAIClient implements AIClient {
     }
 
     try {
+      // O3系のモデルでは、temperatureは1.0のみサポートされる
+      const isO3Model = options.model.includes('o3');
+      const temperature = isO3Model ? 1.0 : (options.temperature || 0.7);
+      
       const response = await this.client.chat.completions.create({
         model: options.model,
         messages: options.messages,
-        temperature: options.temperature || 0.7,
+        temperature: temperature,
         max_completion_tokens: options.max_completion_tokens || 2000,
       });
 
