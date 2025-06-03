@@ -66,15 +66,20 @@ export class OpenAIClient implements AIClient {
 
     try {
       // O3系のモデルでは、temperatureは1.0のみサポートされる
+      // O1系のモデルでは、temperatureパラメータはサポートされない
       const isO3Model = options.model.includes('o3');
+      const isO1Model = options.model.includes('o1');
       const temperature = isO3Model ? 1.0 : (options.temperature || 0.7);
       
-      const response = await this.client.chat.completions.create({
+      // OpenAI API用のパラメータを設定
+      const apiParams = {
         model: options.model,
         messages: options.messages,
-        temperature: temperature,
+        ...(isO1Model ? {} : { temperature }),
         max_completion_tokens: options.max_completion_tokens || 2000,
-      });
+      };
+      
+      const response = await this.client.chat.completions.create(apiParams);
 
       if (!response.choices || response.choices.length === 0) {
         throw new Error('OpenAI API did not return any response choices');

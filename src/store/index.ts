@@ -40,16 +40,26 @@ interface UIState {
 const defaultSettings: Settings = {
   prompts: [
     {
+      id: 'default-llm',
+      name: '汎用',
+      systemPrompt: 'You are helpful assistant.',
+      model: 'gpt-4o-mini',
+    },
+    {
       id: 'default-summary',
       name: '要約',
-      systemPrompt: 'あなたは与えられたテキストを要約してください',
+      systemPrompt: 'You are a summarization assistant.',
       model: 'gpt-4o-mini',
     },
     {
       id: 'default-speech-format',
       name: '音声認識成形',
-      systemPrompt:
-        'あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください:\n1. 不要な空白や改行を削除\n2. 文法的に正しい文章に修正\n3. 意味が通じるように整形\n4. 句読点を適切に追加\n5. 原文の意味を保持しつつ、読みやすい文章にする',
+      systemPrompt: 
+`あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください
+1. 不要な空白や改行、フィラーを削除
+2. 文法的に正しい文章に修正
+3. 意味が通じるように整形
+4. 句読点を適切に追加`,
       model: 'gpt-4o-mini',
     },
     {
@@ -68,7 +78,7 @@ const defaultSettings: Settings = {
       id: 'default-knowledge-jp',
       name: '知識（日本語）',
       systemPrompt:
-        'あなたは与えられたテキストに基づいて、日本語で知識を提供してください。出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。',
+        'あなたは与えられたテキストに基づいて、日本語で知識を提供してください。\n出力先はCosense(Scrapbox)です。重要度が高い単語は[]で囲ってください。',
       model: 'gpt-4o-mini',
     },
     {
