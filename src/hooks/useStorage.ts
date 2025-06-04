@@ -4,7 +4,6 @@ export interface Prompt {
   id: string;
   name: string;
   systemPrompt: string;
-  formatPrompt?: string; // 出力フォーマットを規定するプロンプト
   model: string;
   provider?: 'openai' | 'openrouter'; // 個別プロバイダー指定（省略時は全体設定依存）
   insertPosition?: 'below' | 'bottom'; // 個別挿入位置（省略時は全体設定依存）
@@ -282,7 +281,6 @@ export class StorageService {
       id: prompt.id || this.generateId(),
       name: prompt.name,
       systemPrompt: prompt.systemPrompt,
-      formatPrompt: prompt.formatPrompt, // フォーマットプロンプトを追加
       model: prompt.model,
       provider: prompt.provider,
       insertPosition: prompt.insertPosition,

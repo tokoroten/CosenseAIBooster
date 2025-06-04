@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSettingsStore } from '../../store';
 import { PromptEditingType } from './settings-types';
-import { StorageService } from '../../hooks/useStorage';
 
 const PromptsTab: React.FC = () => {
   const { prompts, addPrompt, updatePrompt, deletePrompt, addDefaultPrompts, apiProvider } =
@@ -14,7 +13,6 @@ const PromptsTab: React.FC = () => {
         id: editingPrompt.id || `prompt-${Date.now()}`,
         name: editingPrompt.name,
         systemPrompt: editingPrompt.systemPrompt,
-        formatPrompt: editingPrompt.formatPrompt || '',
         model: editingPrompt.model,
         provider: editingPrompt.provider,
         insertPosition: editingPrompt.insertPosition,
@@ -60,12 +58,6 @@ const PromptsTab: React.FC = () => {
         {prompts.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">プロンプトがありません</p>
-            <button
-              onClick={addDefaultPrompts}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              デフォルトプロンプトを追加
-            </button>
           </div>
         ) : (
           prompts.map((prompt) => (
@@ -93,14 +85,6 @@ const PromptsTab: React.FC = () => {
                   ? `${prompt.systemPrompt.substring(0, 100)}...`
                   : prompt.systemPrompt}
               </div>
-              {prompt.formatPrompt && (
-                <div className="mt-1 text-xs text-gray-500">
-                  <span className="font-semibold">出力フォーマット設定プロンプト:</span> 
-                  {prompt.formatPrompt.length > 50
-                    ? `${prompt.formatPrompt.substring(0, 50)}...`
-                    : prompt.formatPrompt}
-                </div>
-              )}
             </div>
           ))
         )}
@@ -133,7 +117,9 @@ const PromptsTab: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700">モデル</label>
                     <select
                       value={editingPrompt.model}
-                      onChange={(e) => setEditingPrompt({ ...editingPrompt, model: e.target.value })}
+                      onChange={(e) =>
+                        setEditingPrompt({ ...editingPrompt, model: e.target.value })
+                      }
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                       {/* プロバイダーごとに候補を切り替え */}
@@ -161,7 +147,9 @@ const PromptsTab: React.FC = () => {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">AIプロバイダー</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      AIプロバイダー
+                    </label>
                     <select
                       value={editingPrompt.provider || apiProvider}
                       onChange={(e) => {
@@ -209,36 +197,6 @@ const PromptsTab: React.FC = () => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                   style={{ minHeight: '150px' }}
                 ></textarea>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    出力フォーマットプロンプト
-                  </label>
-                  <button
-                    onClick={() => {
-                      const defaultFormat = StorageService.getDefaultFormatPrompt();
-                      setEditingPrompt({ ...editingPrompt, formatPrompt: defaultFormat });
-                    }}
-                    className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded"
-                  >
-                    初期化
-                  </button>
-                </div>
-                <textarea
-                  value={editingPrompt.formatPrompt || ''}
-                  onChange={(e) =>
-                    setEditingPrompt({ ...editingPrompt, formatPrompt: e.target.value })
-                  }
-                  rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                  placeholder="出力形式を指定するプロンプトを入力。例: マークダウン形式で出力してください。箇条書きで3つのポイントにまとめてください。各ポイントは2-3文で説明してください。"
-                  style={{ minHeight: '100px' }}
-                ></textarea>
-                <p className="text-xs text-gray-500 mt-1">
-                  このプロンプトはこのプロンプト専用の出力フォーマット設定です。
-                  グローバル出力フォーマット設定が優先されますが、グローバル設定が空の場合はこの設定が使用されます。
-                </p>
               </div>
             </div>
             <div className="mt-6 flex justify-end space-x-4">

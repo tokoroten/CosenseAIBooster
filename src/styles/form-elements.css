@@ -1,0 +1,13 @@
+@layer components {
+  .input-field {
+    @apply mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm;
+  }
+  
+  .select-field {
+    @apply mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm;
+  }
+  
+  .textarea-field {
+    @apply mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm;
+  }
+}

@@ -44,11 +44,10 @@ const GeneralTab: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-medium">出力フォーマット設定</h3>
         <div className="mt-2">
           <div className="flex justify-between items-center mb-1">
-            <label htmlFor="format-prompt" className="block text-sm font-medium text-gray-700">
-              グローバル出力フォーマットプロンプト
+            <label htmlFor="format-prompt" className="block text-lg font-medium text-gray-700">
+              出力フォーマット設定
             </label>
             <button
               onClick={() => {
@@ -70,9 +69,7 @@ const GeneralTab: React.FC = () => {
             style={{ minHeight: '100px' }}
           />
           <p className="text-xs text-gray-500 mt-1">
-            このプロンプトは全てのシステムプロンプトに追加され、AI出力の形式を統一します。
-            例えば「常にマークダウン形式で出力してください」や「出力は箇条書きにし、各項目を3行以内で簡潔にまとめてください」など、
-            出力フォーマットの指定に使用します。個別プロンプトの設定よりも優先されます。
+            このプロンプトは全てのシステムプロンプトに追加され、AI出力の形式をCosense/Scrapboxに適した形に整形します。
           </p>
         </div>
       </div>

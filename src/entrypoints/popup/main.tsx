@@ -48,7 +48,12 @@ const Popup: React.FC = () => {
       style={{ width: '540px', height: '600px', display: 'flex', flexDirection: 'column' }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-semibold">Cosense AI Booster</h1>
+        <div className="flex items-center">
+          <h1 className="text-lg font-semibold">Cosense AI Booster</h1>
+          <span className="ml-2 text-xs text-gray-500">
+            v{process.env.VITE_APP_VERSION || '0.1.0'} ({process.env.VITE_GIT_HASH || 'dev'})
+          </span>
+        </div>
         <div
           className={`h-2 w-2 rounded-full ${
             status === 'active'
