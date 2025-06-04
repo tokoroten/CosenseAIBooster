@@ -140,7 +140,7 @@ const ApiTab: React.FC = () => {
                       setOpenaiKey(trimmed);
                     }
                   }}
-                  className="block w-full pr-10 rounded-md border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  className="block w-full pr-10 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                 />
                 <button
                   type="button"
@@ -158,7 +158,7 @@ const ApiTab: React.FC = () => {
                 id="openai-model"
                 value={openaiModel}
                 onChange={(e) => setOpenaiModel(e.target.value)}
-                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="select-field"
               >
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 <option value="gpt-4o">GPT-4o</option>
@@ -181,8 +181,7 @@ const ApiTab: React.FC = () => {
               <label htmlFor="openrouter-key" className="block text-sm text-gray-700">
                 API キー
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
+              <div className="mt-1 relative rounded-md shadow-sm">                <input
                   type={showOpenRouterKey ? 'text' : 'password'}
                   id="openrouter-key"
                   value={openrouterKey}
@@ -193,7 +192,7 @@ const ApiTab: React.FC = () => {
                       setOpenrouterKey(trimmed);
                     }
                   }}
-                  className="block w-full pr-10 rounded-md border-2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  className="block w-full pr-10 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                 />
                 <button
                   type="button"
@@ -211,7 +210,7 @@ const ApiTab: React.FC = () => {
                 id="openrouter-model"
                 value={openrouterModel}
                 onChange={(e) => setOpenrouterModel(e.target.value)}
-                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="select-field"
               >
                 <option value="openai/gpt-3.5-turbo">OpenAI: GPT-3.5 Turbo</option>
                 <option value="openai/gpt-4">OpenAI: GPT-4</option>

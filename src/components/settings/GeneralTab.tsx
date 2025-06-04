@@ -65,7 +65,7 @@ const GeneralTab: React.FC = () => {
             onChange={(e) => setFormatPrompt(e.target.value)}
             placeholder="AIの出力フォーマットを指定するプロンプトを入力。例: マークダウン形式で出力してください。箇条書きで3つのポイントにまとめてください。"
             rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+            className="textarea-field"
             style={{ minHeight: '100px' }}
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -75,16 +75,14 @@ const GeneralTab: React.FC = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-medium">音声入力設定</h3>
         <div className="mt-2">
-          <label htmlFor="speech-lang" className="block text-sm text-gray-700">
-            言語
-          </label>
-          <select
+          <label htmlFor="speech-lang" className="block text-lg font-medium text-gray-700">
+            音声認識言語
+          </label>          <select
             id="speech-lang"
             value={speechLang}
             onChange={(e) => setSpeechLang(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="select-field"
           >
             <option value="ja-JP">日本語 (ja-JP)</option>
             <option value="en-US">英語 (en-US)</option>

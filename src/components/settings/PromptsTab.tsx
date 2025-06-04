@@ -110,7 +110,7 @@ const PromptsTab: React.FC = () => {
                       type="text"
                       value={editingPrompt.name}
                       onChange={(e) => setEditingPrompt({ ...editingPrompt, name: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                      className="input-field"
                     />
                   </div>
                   <div>
@@ -120,7 +120,7 @@ const PromptsTab: React.FC = () => {
                       onChange={(e) =>
                         setEditingPrompt({ ...editingPrompt, model: e.target.value })
                       }
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="select-field"
                     >
                       {/* プロバイダーごとに候補を切り替え */}
                       {(editingPrompt.provider || apiProvider) === 'openai' && (
@@ -158,7 +158,7 @@ const PromptsTab: React.FC = () => {
                           provider: e.target.value as 'openai' | 'openrouter',
                         });
                       }}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="select-field"
                     >
                       <option value="">（全体設定に従う）</option>
                       <option value="openai">OpenAI</option>
@@ -175,7 +175,7 @@ const PromptsTab: React.FC = () => {
                           insertPosition: e.target.value as 'below' | 'bottom',
                         });
                       }}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className="select-field"
                     >
                       <option value="">（全体設定に従う）</option>
                       <option value="below">選択範囲の下</option>
@@ -194,7 +194,7 @@ const PromptsTab: React.FC = () => {
                     setEditingPrompt({ ...editingPrompt, systemPrompt: e.target.value })
                   }
                   rows={8}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  className="textarea-field"
                   style={{ minHeight: '150px' }}
                 ></textarea>
               </div>

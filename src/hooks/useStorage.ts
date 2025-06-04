@@ -27,8 +27,7 @@ export class StorageService {
     prompts: [],
     insertPosition: 'below',
     speechLang: 'ja-JP',
-    formatPrompt: `
-出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+    formatPrompt: `出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
 箇条書きはタブの個数でネストしてください。ハイフンとスペースで箇条書きをネストしてはいけません。
 重要な語は[] で囲ってリンクにする。
 見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。基本は1個か2個です。
