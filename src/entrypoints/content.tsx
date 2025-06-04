@@ -2,7 +2,6 @@
 import { defineContentScript } from 'wxt/sandbox';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import '../styles/index.css';
 
 // Import the components from the components folder
 import { SpeechRecognitionComponent } from '../components/SpeechRecognition';
@@ -15,9 +14,68 @@ export default defineContentScript({
     // Create a container for our React components
     const container = document.createElement('div');
     container.id = 'cosense-ai-booster-container';
+
+    // CosenseのレイアウトとCSSの衝突を防ぐスタイル設定
+    container.style.position = 'absolute';
+    container.style.pointerEvents = 'none';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '0';
+    container.style.height = '0';
+    container.style.overflow = 'visible';
+    container.style.zIndex = '9999';
+
+    // CSSをCosenseと分離するためにShadow DOMを使用
+    const shadowRoot = container.attachShadow({ mode: 'open' });
+    const shadowContainer = document.createElement('div');
+    shadowContainer.id = 'cosense-ai-shadow-container';
+
+    // スタイルシートをShadow DOM内に閉じ込める
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      /* Shadow DOM内でのみ適用されるリセットスタイル */
+      :host {
+        all: initial;
+      }
+      #cosense-ai-shadow-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        overflow: visible;
+        pointer-events: none;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      
+      /* コンポーネントが必要とするスタイルをここに追加 */
+      button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      
+      /* shadow DOM内でのみ適用されるReactコンポーネント用スタイル */
+      .absolute {
+        position: static !important; /* Cosenseのクラス名衝突を防止 */
+      }
+      
+      /* Tailwind CSSをここに挿入 */
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+
+      /* その他必要なスタイル */
+    `;
+
+    // Shadow DOM内に要素を追加
+    shadowRoot.appendChild(styleElement);
+    shadowRoot.appendChild(shadowContainer);
+
     document.body.appendChild(container);
-    // Initialize React app for content script
-    const root = createRoot(container);
+    // Initialize React app for content script in the shadow container
+    const root = createRoot(shadowContainer);
     root.render(
       <React.StrictMode>
         <ContentApp />
@@ -34,15 +92,15 @@ const ContentApp: React.FC = () => {
     const loadSettings = async () => {
       try {
         // eslint-disable-next-line no-console
-        console.log('[CosenseAIBooster frontend] バックグラウンドから設定をロードしています...');
+        // console.log('[CosenseAIBooster frontend] バックグラウンドから設定をロードしています...');
         // フロントエンドストアのロード関数を実行してバックグラウンドからデータを取得
         await frontendStore.loadSettings();
         // eslint-disable-next-line no-console
-        console.log('[CosenseAIBooster frontend] フロントエンド設定のロードが完了しました');
-        console.log(
-          '[CosenseAIBooster frontend] 現在のフロントのセッティング:',
-          useFrontendStore.getState()
-        );
+        // console.log('[CosenseAIBooster frontend] フロントエンド設定のロードが完了しました');
+        // console.log(
+        //   '[CosenseAIBooster frontend] 現在のフロントのセッティング:',
+        //   useFrontendStore.getState()
+        // );
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error(
