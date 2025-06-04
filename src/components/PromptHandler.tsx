@@ -5,6 +5,7 @@ import {
   addButtonToPopupMenu,
   onPopupMenuShown,
   clearPopupMenuButtons,
+  addPromptInputToPopupMenu,
 } from '../utils/react-cosense-dom';
 import { FrontendAPIService } from '../api/frontend-service';
 import { useFrontendStore } from '../store/frontend-store';
@@ -209,6 +210,14 @@ const PromptHandlerComponent: React.FC = () => {
           return;
         }
 
+        // 既存の入力ボックスがあれば削除（クリーンな状態にするため）
+        const existingInput = document.querySelector('#cosense-prompt-input-container');
+        if (existingInput) {
+          // eslint-disable-next-line no-console
+          console.log('既存の入力ボックスを削除します');
+          existingInput.remove();
+        }
+
         // 各プロンプトに対して新規にボタンを追加
         currentPrompts.forEach((prompt, index) => {
           if (!prompt || !prompt.id || !prompt.name) {
@@ -232,6 +241,42 @@ const PromptHandlerComponent: React.FC = () => {
             console.warn(`ボタン追加失敗: ${prompt.name}`);
           }
         });
+        
+        // すべてのボタンを追加した後に、必ず明示的にカスタムプロンプト入力ボックスを追加
+        // 少し遅延させて、他の処理が完了した後に確実に追加されるようにする
+        setTimeout(() => {
+          // eslint-disable-next-line no-console
+          console.log('カスタム入力ボックスを追加します');
+          
+          const inputAdded = addPromptInputToPopupMenu((customPromptText) => {
+            // カスタムプロンプトが入力されたときの処理
+            // eslint-disable-next-line no-console
+            console.log('カスタムプロンプト入力:', customPromptText);
+            
+            // TODO: カスタムプロンプトの処理を実装
+            // 例: フロントエンドサービス経由でバックグラウンドに処理を依頼
+            // 現在は選択されたテキストを取得して、ダイアログ表示するだけ
+            const selectedText = getSelectedText();
+            if (selectedText) {
+              // 仮の処理: 選択テキストとカスタムプロンプトをアラート表示
+              alert(`選択テキスト: ${selectedText}\nカスタムプロンプト: ${customPromptText}`);
+              
+              // TODO: 実際の処理（プロンプト実行）を実装
+              // const tempPrompt: Prompt = {
+              //   id: 'custom',
+              //   name: 'カスタムプロンプト',
+              //   userPrompt: customPromptText,
+              //   systemPrompt: '',
+              //   model: 'gpt-3.5-turbo',
+              //   insertPosition: 'below'
+              // };            // void processPrompt(tempPrompt);
+            }
+          });
+          
+          // 追加結果をログ出力
+          // eslint-disable-next-line no-console
+          console.log('カスタム入力ボックス追加結果:', inputAdded ? '成功' : '失敗');
+        }, 100); // 100ms の遅延を設定
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('ポップアップメニュー表示時のプロンプト処理エラー:', err);

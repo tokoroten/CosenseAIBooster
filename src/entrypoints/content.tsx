@@ -77,6 +77,11 @@ export default defineContentScript({
         height: 100% !important;
       }
       
+      /* ポップアップメニュー全体のz-indexを確保 */
+      :host-context(body) .popup-menu {
+        z-index: 999 !important; /* ポップアップメニュー自体も高いz-indexを持つように */
+      }
+      
       /* ポップアップメニューのボタンコンテナの横幅を設定 */
       :host-context(body) .popup-menu .button-container {
         width: 400px !important;
@@ -84,6 +89,30 @@ export default defineContentScript({
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
+        position: relative !important; /* 位置関係を明確に */
+        z-index: 999 !important; /* ボタンコンテナのz-indexも設定 */
+      }
+      
+      /* プロンプト入力ボックスのスタイル */
+      :host-context(body) .popup-menu #cosense-prompt-input {
+        width: 100% !important;
+        padding: 6px 8px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
+        font-size: 14px !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        z-index: 1001 !important; /* 高いz-indexでテキストボックスを前面に表示 */
+      }
+      
+      /* 入力ボックスのコンテナスタイル */
+      :host-context(body) .popup-menu #cosense-prompt-input-container {
+        width: 100% !important;
+        padding: 5px !important;
+        margin-top: 8px !important;
+        border-top: 1px solid #eee !important;
+        position: relative !important;
+        z-index: 1000 !important; /* 高いz-indexでコンテナを前面に表示 */
       }
       
       /* その他必要なスタイル */

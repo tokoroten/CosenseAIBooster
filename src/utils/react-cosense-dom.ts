@@ -187,10 +187,89 @@ export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void):
 }
 
 /**
- * 選択範囲ポップアップメニューから特定のプレフィックスを持つボタンを全て削除
- * @param prefix ボタンIDのプレフィックス
- * @returns 削除されたボタンの数
+ * Cosenseの選択範囲ポップアップメニューにカスタムプロンプト入力ボックスを追加する
+ * @param onSubmit 入力ボックスでEnterが押された時のコールバック関数
+ * @returns 追加に成功したかどうか
  */
+export function addPromptInputToPopupMenu(
+  onSubmit?: (value: string) => void
+): boolean {
+  try {
+    // 最新のDOM状態を取得するため、毎回新しく要素を探す
+    const buttonContainer = document.querySelector('.popup-menu .button-container');
+    if (!buttonContainer) {
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster frontend] addPromptInputToPopupMenu: .button-container not found');
+      return false;
+    }
+    
+    // プロンプト入力用のテキストボックスが既に存在するか確認
+    const existingInput = buttonContainer.querySelector('#cosense-prompt-input');
+    if (existingInput) {
+      // 既に存在する場合は成功として扱う
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster frontend] addPromptInputToPopupMenu: input already exists');
+      return true;
+    }
+    
+    // 入力ボックスを囲むコンテナ（幅いっぱいに表示するため）
+    const inputContainer = document.createElement('div');
+    inputContainer.id = 'cosense-prompt-input-container';
+    inputContainer.style.width = '100%';
+    inputContainer.style.padding = '5px';
+    inputContainer.style.marginTop = '8px';
+    inputContainer.style.borderTop = '1px solid #eee';
+    inputContainer.style.position = 'relative'; // 位置関係を明確にする
+    inputContainer.style.zIndex = '1000'; // 高いz-indexを設定
+    
+    // プロンプト入力ボックスを作成
+    const promptInputBox = document.createElement('input');
+    promptInputBox.id = 'cosense-prompt-input';
+    promptInputBox.type = 'text';
+    promptInputBox.placeholder = 'プロンプトを入力...';
+    promptInputBox.style.width = '100%';
+    promptInputBox.style.padding = '4px 2px';
+    promptInputBox.style.border = '1px solid #ddd';
+    promptInputBox.style.borderRadius = '4px';
+    promptInputBox.style.fontSize = '14px';
+    promptInputBox.style.boxSizing = 'border-box';
+    promptInputBox.style.position = 'relative'; // 位置関係を明確にする
+    promptInputBox.style.zIndex = '1001'; // コンテナよりさらに高いz-indexを設定
+    
+    // Enter キー押下時の処理
+    promptInputBox.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const inputValue = promptInputBox.value.trim();
+        if (inputValue) {
+          // eslint-disable-next-line no-console
+          console.log('[CosenseAIBooster frontend] Custom prompt input:', inputValue);
+          
+          // コールバック関数が設定されていれば実行
+          onSubmit?.(inputValue);
+          
+          // 入力欄をクリア
+          promptInputBox.value = '';
+        }
+      }
+    });
+    
+    // コンテナに入力ボックスを追加
+    inputContainer.appendChild(promptInputBox);
+    
+    // ボタンコンテナの最後に追加
+    buttonContainer.appendChild(inputContainer);
+    
+    // eslint-disable-next-line no-console
+    console.log('[CosenseAIBooster frontend] Custom prompt input added successfully');
+    return true;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[CosenseAIBooster frontend] Error adding custom prompt input:', error);
+    return false;
+  }
+}
+
 export function clearPopupMenuButtons(prefix: string): number {
   try {
     // 最新のDOM状態を取得するため、毎回新しく要素を探す
