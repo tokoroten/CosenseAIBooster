@@ -73,7 +73,7 @@ export class StorageService {
   }
 
   /**
-   * 設定を保存
+   * 設定を保存 - chrome.storage.local を使用
    */
   public static async saveSettings(settings: Settings): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -88,7 +88,7 @@ export class StorageService {
         settings.prompts = [];
       }
 
-      chrome.storage.sync.set(settings, () => {
+      chrome.storage.local.set(settings, () => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
@@ -137,11 +137,11 @@ export class StorageService {
   }
 
   /**
-   * Chrome Storageから直接データを取得
+   * Chrome Storage (local)から直接データを取得
    */
   private static async getStorageItems(): Promise<any> {
     return new Promise<any>((resolve) => {
-      chrome.storage.sync.get(null, (result) => {
+      chrome.storage.local.get(null, (result) => {
         if (chrome.runtime.lastError) {
           resolve(null);
         } else {

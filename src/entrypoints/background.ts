@@ -1,4 +1,5 @@
 // Background script entrypoint
+/* eslint-disable no-console */
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/sandbox';
 import { OpenAIClient } from '../api/openai';
@@ -16,48 +17,11 @@ export default defineBackground(() => {
 
   console.log('[CosenseAIBooster backend] メッセージリスナーを設定中...');
   // メッセージリスナーを設定
-  browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  browser.runtime.onMessage.addListener(async (request) => {
     console.log('[CosenseAIBooster backend] メッセージを受信:', request.type, request);
 
     // リクエストタイプに応じた処理
-    if (request.type === 'GET_FRONTEND_SETTINGS') {
-      // フロントエンド用の設定を提供（APIキーなどの機密情報を除外）
-      try {
-        console.log('[CosenseAIBooster backend] GET_FRONTEND_SETTINGS リクエストを処理中...');
-        const state = useSettingsStore.getState();
-        console.log('[CosenseAIBooster backend] 現在のストア状態:', {
-          promptsCount: state.prompts.length,
-          insertPosition: state.insertPosition,
-          apiProvider: state.apiProvider,
-        });
-
-        // フロントエンドに安全に送信できる情報のみ抽出
-        const frontendSettings = {
-          prompts: state.prompts,
-          insertPosition: state.insertPosition,
-          speechLang: state.speechLang,
-          apiProvider: state.apiProvider,
-          openaiModel: state.openaiModel,
-          openrouterModel: state.openrouterModel,
-        };
-
-        console.log('[CosenseAIBooster backend] フロントエンド設定を送信:', {
-          promptsCount: frontendSettings.prompts.length,
-          insertPosition: frontendSettings.insertPosition,
-        });
-
-        return Promise.resolve({
-          success: true,
-          frontendSettings,
-        });
-      } catch (error) {
-        console.error('[CosenseAIBooster backend] 設定取得エラー:', error);
-        return Promise.resolve({
-          success: false,
-          error: error instanceof Error ? error.message : '不明なエラー',
-        });
-      }
-    } else if (request.type === 'PROCESS_PROMPT') {
+    if (request.type === 'PROCESS_PROMPT') {
       // プロンプト処理をバックグラウンドで実行（APIキーはバックグラウンドでのみ使用）
       try {
         console.log('[CosenseAIBooster backend] プロンプト処理を開始します');

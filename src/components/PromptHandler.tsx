@@ -85,7 +85,7 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
     handleError(error, 'プロンプト処理中にエラーが発生しました', {
       level: 'error',
       showToUser: true,
-      context: { promptId: prompt.id }
+      context: { promptId: prompt.id },
     });
   }
 };
@@ -119,11 +119,11 @@ const PromptHandlerComponent: React.FC = () => {
     };
 
     // 常に最新データを取得
-    loadPrompts(); // Chrome Storageの変更を直接監視
+    loadPrompts();    // chrome.storage.localから直接データをロード
     const storageChangeHandler = (changes: Record<string, StorageChange>, areaName: string) => {
-      if (areaName === 'sync' && changes['cosense-ai-settings']) {
+      if (areaName === 'local' && changes['cosense-ai-settings']) {
         // eslint-disable-next-line no-console
-        console.log('[CosenseAIBooster frontend] ストレージ変更を検出、プロンプト更新を開始します');
+        console.log('[CosenseAIBooster frontend] chrome.storage.local変更を検出、プロンプト更新を開始します');
 
         // ストレージ変更時に即座にプロンプト情報を更新
         void Promise.resolve().then(async () => {

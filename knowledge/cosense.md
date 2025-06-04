@@ -6,25 +6,28 @@
 
 ## ストア構造
 
+### 統一ストレージ（chrome.storage.local）
+- すべての設定を chrome.storage.local に統一して保存
+- バックエンドとフロントエンドで同一のストレージを参照
+- 設定変更の同期の問題がなくなりました
+
 ### バックエンドストア（index.ts、service.ts）
-- フルアクセス可能な設定を保持（APIキーを含む）
-- Chrome Storageに永続化されている
-- バックグラウンドスクリプトからアクセスされる
-- API操作を実行する際の機密情報を管理
+- chrome.storage.local から直接読み込み
+- API操作を実行する際の機密情報を含むすべての設定を管理
 
 ### フロントエンドストア（frontend-store.ts）
-- API情報など機密情報を含まない設定のみ保持
-- ページロード時に`loadSettings()`でバックエンドから設定を取得
+- chrome.storage.local から直接読み込み
 - `useFrontendStore`として提供
-- コンテンツスクリプトとポップアップからアクセスされる
+- 必要に応じて機密情報（APIキー）を除外して表示
 
 ### 通信方法
-- フロントエンド→バックエンド: chrome.runtime.sendMessage
-- 結果の受け取り: Promise based API (FrontendAPIService)
+- プロンプト処理のみバックエンド→フロントエンド: chrome.runtime.sendMessage
+- 設定データは chrome.storage.local から直接取得
 
 ## ストレージ変更監視
 - PromptHandler.tsxでのみChrome Storageの変更を監視
 - 変更があった場合にfrontendStore.loadSettings()を呼び出して更新
+- chrome.storage.local の変更を監視することで設定の同期を実現
 - 重複監視を避けるためにトップレベルでの監視は行わない
 
 ## 2025年6月3日の修正
@@ -65,6 +68,22 @@
 ### 音声認識エラーハンドリング強化
 - 音声認識でマイク権限エラー（not-allowed）が発生した場合のユーザー通知機能を追加
 - エラータイプを受け取るコールバック設計により、エラーに応じた適切なUIフィードバックを実現
+
+## 2025年6月5日の修正
+- ストレージ管理方式の統一と簡素化
+  - chrome.storage.local に統一し、バックエンドとフロントエンド間の通信を削除
+  - フロントエンドが直接 chrome.storage.local から設定を読み取るように変更
+  - GET_FRONTEND_SETTINGS メッセージングの削除
+  - ストア同期の問題を根本的に解決
+  
+- セキュリティ対応（暫定）
+  - chrome.storage.local にAPIキーを保存することで、フロントエンドとバックエンドで統一された設定を使用
+  - 今後、必要に応じてセキュリティ強化を検討
+  
+- エラーハンドリングの強化
+  - ログ出力の統一・改善
+  - ESLintエラーの修正
+  - 型チェックの強化
 
 ## ページ構造
 - Cosense のページはプロジェクト単位で管理されている

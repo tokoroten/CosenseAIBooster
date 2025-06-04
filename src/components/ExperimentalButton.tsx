@@ -51,31 +51,34 @@ const ExperimentalButton: React.FC = () => {
     setIsLoading(true);
     setResult(null);
 
-    try {
-      // 1. ストアの現在の状態をログ出力
+    try {      // 1. ストアの現在の状態をログ出力
+      // eslint-disable-next-line no-console
       console.log('実験開始: 現在のストア状態', {
         prompts: frontendStore.prompts?.length || 0,
         isLoaded: frontendStore.isLoaded,
         speechLang: frontendStore.speechLang,
         insertPosition: frontendStore.insertPosition,
-      });
-
-      // 2. バックエンドから設定を再取得
-      console.log('バックエンドから設定を再取得中...');
+      });      // 2. chrome.storage.localから設定を取得
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] chrome.storage.localから設定を取得中...');
       const settings = await FrontendAPIService.getFrontendSettings();
-      console.log('バックエンド応答:', settings);
-
-      // 3. テスト用メッセージングを実行
-      console.log('バックエンドに直接メッセージを送信...');
-      const testResponse = await browser.runtime.sendMessage({
-        type: 'GET_FRONTEND_SETTINGS',
-      });
-      console.log('バックエンドからの直接応答:', testResponse);
-
-      // 4. フロントエンドストアの設定を再読み込み
-      console.log('フロントエンドストアの設定を更新中...');
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] chrome.storage.local応答:', settings);      // 3. chrome.storage.localから直接データを取得する(検証用)
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] chrome.storage.localから直接データを取得中...');
+      const storageResult = await browser.storage.local.get(['cosense-ai-settings']);
+      const testResponse = storageResult ? {
+        success: true,
+        source: 'chrome.storage.local',
+        hasSettings: !!storageResult['cosense-ai-settings'],
+      } : { success: false };
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] chrome.storage.local応答:', testResponse);      // 4. フロントエンドストアの設定を再読み込み
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] フロントエンドストアの設定を更新中...');
       await frontendStore.loadSettings();
-      console.log('設定更新後のストア状態:', {
+      // eslint-disable-next-line no-console
+      console.log('[CosenseAIBooster] 設定更新後のストア状態:', {
         prompts: frontendStore.prompts?.length || 0,
         isLoaded: frontendStore.isLoaded,
         speechLang: frontendStore.speechLang,
@@ -93,18 +96,18 @@ const ExperimentalButton: React.FC = () => {
         
         2. バックエンド応答:
            - 設定取得成功: ${settings ? '成功' : '失敗'}
-           - バックエンドプロンプト数: ${settings?.prompts?.length || 0}
-           
-        3. メッセージング応答:
+           - バックエンドプロンプト数: ${settings?.prompts?.length || 0}           
+        3. chrome.storage.local応答:
            - 応答成功: ${testResponse?.success ? '成功' : '失敗'}
-           - フロントエンド設定: ${testResponse?.frontendSettings ? 'あり' : 'なし'}
+           - 設定存在: ${testResponse?.hasSettings ? 'あり' : 'なし'}
            
         4. DOM状態:
            - ポップアップメニュー: ${document.querySelector('.popup-menu') ? 'あり' : 'なし'}
            - CosenseUIツール: ${document.querySelector('.tools') ? 'あり' : 'なし'}
       `);
     } catch (error) {
-      console.error('実験中にエラーが発生:', error);
+      // eslint-disable-next-line no-console
+      console.error('[CosenseAIBooster] 実験中にエラーが発生:', error);
       setResult(`エラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsLoading(false);

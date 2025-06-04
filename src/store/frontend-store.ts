@@ -1,7 +1,7 @@
-// フロントエンド専用ストア - APIキーなど機密情報を含まない
+// フロントエンド専用ストア - chrome.storage.localを直接使用
 import { create } from 'zustand';
+import { browser } from 'wxt/browser';
 import { Prompt } from '../hooks/useStorage';
-import { FrontendAPIService } from '../api/frontend-service';
 
 // フロントエンド用の状態型定義（APIキーなどを含まない）
 interface FrontendState {
@@ -54,70 +54,94 @@ export const useFrontendStore = create<FrontendState>()((set, get) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
   setIsLoaded: (isLoaded) => set({ isLoaded }),
 
-  // バックグラウンドからデータをロード
+  // chrome.storage.localから直接データをロード
   loadSettings: async () => {
     try {
       // すでにロード中の場合は処理をスキップ（重複呼び出し防止）
       if (get().isLoading) {
         // eslint-disable-next-line no-console
-        console.log('ロード中のため、重複リクエストをスキップします');
+        console.log('[CosenseAIBooster] ロード中のため、重複リクエストをスキップします');
         return;
       }
 
       set({ isLoading: true });
       // eslint-disable-next-line no-console
-      console.log('バックグラウンドから設定ロード開始 - リクエストID:', Date.now());
+      console.log('[CosenseAIBooster] chrome.storage.localから設定ロード開始');
 
-      // APIサービス経由でバックグラウンドから設定を取得
-      const settings = await FrontendAPIService.getFrontendSettings();
+      // chrome.storage.localから直接設定を取得
+      const result = await browser.storage.local.get('cosense-ai-settings');
 
-      if (settings) {
-        // eslint-disable-next-line no-console
-        console.log('バックグラウンド応答があります', {
-          promptCount: settings.prompts?.length,
-          insertPosition: settings.insertPosition,
-          speechLang: settings.speechLang,
-        });
+      if (result && result['cosense-ai-settings']) {
+        // データがすでにオブジェクトの場合とJSON文字列の場合を処理
+        let storedSettings;
+        try {
+          // 文字列の場合はパースを試みる
+          if (typeof result['cosense-ai-settings'] === 'string') {
+            storedSettings = JSON.parse(result['cosense-ai-settings']);
+          } else {
+            // すでにオブジェクトの場合は直接使用
+            storedSettings = result['cosense-ai-settings'];
+          }
+        
+          if (storedSettings && storedSettings.state) {
+            const settings = storedSettings.state;
+          
+          // eslint-disable-next-line no-console
+          console.log('[CosenseAIBooster] chrome.storage.localから設定を取得しました', {
+            promptCount: settings.prompts?.length,
+            insertPosition: settings.insertPosition,
+            speechLang: settings.speechLang,
+          });
 
-        // APIキーなどの機密情報を除外して設定を更新
-        set((state) => {
-          // デバッグ情報出力（更新前後の差分確認用）
-          const promptsDiff =
-            settings.prompts?.length !== state.prompts.length
-              ? `${state.prompts.length} -> ${settings.prompts?.length}`
-              : '変更なし';
+          // APIキーなどの機密情報を除外して設定を更新
+          set((state) => {
+            // デバッグ情報出力（更新前後の差分確認用）
+            const promptsDiff = 
+              settings.prompts?.length !== state.prompts.length
+                ? `${state.prompts.length} -> ${settings.prompts?.length}`
+                : '変更なし';
+
+            // eslint-disable-next-line no-console
+            console.log('[CosenseAIBooster] ストア更新: プロンプト数', promptsDiff);
+
+            return {
+              prompts: settings.prompts || state.prompts,
+              insertPosition: settings.insertPosition || state.insertPosition,
+              speechLang: settings.speechLang || state.speechLang,
+              apiProvider: settings.apiProvider || state.apiProvider,
+              openaiModel: settings.openaiModel || state.openaiModel,
+              openrouterModel: settings.openrouterModel || state.openrouterModel,
+              isLoaded: true,
+              isLoading: false,
+            };
+          });
 
           // eslint-disable-next-line no-console
-          console.log('ストア更新: プロンプト数', promptsDiff);
-
-          return {
-            prompts: settings.prompts || state.prompts,
-            insertPosition: settings.insertPosition || state.insertPosition,
-            speechLang: settings.speechLang || state.speechLang,
-            apiProvider: settings.apiProvider || state.apiProvider,
-            openaiModel: settings.openaiModel || state.openaiModel,
-            openrouterModel: settings.openrouterModel || state.openrouterModel,
-            isLoaded: true,
-            isLoading: false,
-          };
-        });
-
-        // eslint-disable-next-line no-console
-        console.log('フロントエンド設定をバックグラウンドから読み込みました');
+          console.log('[CosenseAIBooster] chrome.storage.localから設定を読み込みました');
+        } else {
+          // eslint-disable-next-line no-console
+          console.warn('[CosenseAIBooster] chrome.storage.localから有効な設定が取得できませんでした');
+          set({ isLoaded: true, isLoading: false });
+        }
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(`[CosenseAIBooster] 設定のパースエラー:`, error);
+          set({ isLoaded: true, isLoading: false });
+        }
       } else {
         // eslint-disable-next-line no-console
-        console.warn('バックグラウンドからの設定取得に失敗しました、デフォルト値を使用します');
+        console.warn('[CosenseAIBooster] chrome.storage.localから設定を取得できませんでした、デフォルト値を使用します');
         set({ isLoaded: true, isLoading: false });
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('設定の取得中にエラーが発生しました', error);
+      console.error('[CosenseAIBooster] chrome.storage.localからの設定取得中にエラーが発生しました', error);
       set({ isLoaded: true, isLoading: false });
 
       // エラー詳細を出力（通信エラーのデバッグ用）
       if (error instanceof Error) {
         // eslint-disable-next-line no-console
-        console.error('エラー詳細:', error.message, error.stack);
+        console.error('[CosenseAIBooster] エラー詳細:', error.message, error.stack);
       }
     }
   },

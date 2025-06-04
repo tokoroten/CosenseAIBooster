@@ -16,30 +16,14 @@ export interface CompletionRequest {
 export class APIService {
   /**
    * Get API client options from Zustand store
+   * 注意: 非同期処理が必要な場合はgetOptionsFromStoreAsyncを使用すること
    */
   static getOptionsFromStore(): APIClientOptions {
     const state = useSettingsStore.getState();
 
-    // ストアの再ハイドレーションを試みる（Chrome拡張機能のストレージから最新の状態を読み込む）
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      // 同期的な処理としてストレージから読み込む（非同期処理だとエラーになる可能性があるため）
-      try {
-        chrome.storage.local.get('cosense-ai-settings', (result) => {
-          if (result && result['cosense-ai-settings']) {
-            // ローカルストレージから直接取得して状態を更新
-            const storedState = JSON.parse(result['cosense-ai-settings']);
-            if (storedState.state) {
-              console.log('ストレージから設定を読み込みました');
-            }
-          }
-        });
-      } catch (e) {
-        console.error('ストレージからの読み込みに失敗しました:', e);
-      }
-    }
-
     // 状態のデバッグ出力
-    console.log('Current API settings:', {
+    // eslint-disable-next-line no-console
+    console.log('[CosenseAIBooster] Current API settings:', {
       provider: state.apiProvider,
       openaiKey: state.openaiKey ? state.openaiKey.slice(0, 4) + '...' : '未設定',
       openrouterKey: state.openrouterKey ? state.openrouterKey.slice(0, 4) + '...' : '未設定',
@@ -47,29 +31,33 @@ export class APIService {
 
     // Based on the selected provider, return the appropriate options
     switch (state.apiProvider) {
-      case 'openai':
+      case 'openai': {
         // APIキーのトリミング処理
         const openaiKey = state.openaiKey ? state.openaiKey.trim() : '';
         if (!openaiKey) {
-          console.error('OpenAI APIキーが設定されていません');
+          // eslint-disable-next-line no-console
+          console.error('[CosenseAIBooster] OpenAI APIキーが設定されていません');
         }
         return {
           provider: 'openai',
           apiKey: openaiKey,
           model: state.openaiModel,
         };
+      }
 
-      case 'openrouter':
+      case 'openrouter': {
         // APIキーのトリミング処理
         const openrouterKey = state.openrouterKey ? state.openrouterKey.trim() : '';
         if (!openrouterKey) {
-          console.error('OpenRouter APIキーが設定されていません');
+          // eslint-disable-next-line no-console
+          console.error('[CosenseAIBooster] OpenRouter APIキーが設定されていません');
         }
         return {
           provider: 'openrouter',
           apiKey: openrouterKey,
           model: state.openrouterModel,
         };
+      }
 
       default:
         throw new Error(`サポートされていないAPIプロバイダー: ${state.apiProvider}`);
@@ -77,7 +65,7 @@ export class APIService {
   }
 
   /**
-   * Get API client options directly from Chrome storage (async version)
+   * Get API client options directly from Chrome storage.local (async version)
    * Chrome拡張機能のストレージから直接APIオプションを取得する（非同期版）
    */
   static async getOptionsFromStoreAsync(): Promise<APIClientOptions> {
@@ -102,6 +90,16 @@ export class APIService {
               apiKey = settings.state?.openrouterKey || '';
               model = settings.state?.openrouterModel || 'openai/gpt-3.5-turbo';
             }
+            
+            // eslint-disable-next-line no-console
+            console.log('[CosenseAIBooster] chrome.storage.localから設定を取得しました', {
+              provider: apiProvider,
+              modelName: model,
+              hasKey: !!apiKey
+            });
+          } else {
+            // eslint-disable-next-line no-console
+            console.warn('[CosenseAIBooster] chrome.storage.localから設定を取得できませんでした');
           }
 
           // APIキーのトリム処理
@@ -115,6 +113,8 @@ export class APIService {
           });
         });
       } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[CosenseAIBooster] chrome.storage.localからの設定取得に失敗しました', e);
         reject(new Error('ストレージからの設定取得に失敗しました'));
       }
     });
