@@ -107,7 +107,23 @@ export function addButtonToPopupMenu(options: {
     const btn = document.createElement('div');
     btn.id = options.id;
     btn.className = 'button' + (options.className ? ' ' + options.className : '');
-    btn.textContent = options.label;
+    
+    // 長いプロンプト名は先頭10文字ほど表示して省略記号を付加
+    const displayLabel = options.label.length > 12 
+        ? options.label.substring(0, 10) + '...' 
+        : options.label;
+    btn.textContent = displayLabel;
+    
+    // ツールチップとして完全なラベルを表示
+    btn.title = options.label;
+    
+    // プロンプト名が長い場合のスタイル設定
+    btn.style.maxWidth = '200px'; // 最大幅を設定
+    btn.style.overflow = 'hidden';
+    btn.style.textOverflow = 'ellipsis';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center'; // 上下中央揃え
+    btn.style.height = '100%'; // 親要素の高さいっぱいに
 
     // クリックイベントを設定
     if (options.onClick) {
@@ -145,6 +161,20 @@ export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void):
     const popup = document.querySelector('.popup-menu') as HTMLDivElement | null;
     if (popup && popup !== lastPopup) {
       lastPopup = popup;
+      
+      // button-containerの横幅を設定
+      const buttonContainer = popup.querySelector('.button-container') as HTMLDivElement | null;
+      if (buttonContainer) {
+        // ボタンコンテナの最大幅を400pxに設定
+        buttonContainer.style.maxWidth = '400px';
+        buttonContainer.style.width = '400px';
+        
+        // ボタン要素を中央揃えにする
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.alignItems = 'center';
+        buttonContainer.style.flexWrap = 'wrap';
+      }
+      
       // eslint-disable-next-line no-console
       console.log('[CosenseAIBooster frontend] .popup-menu shown:', popup);
       callback(popup);

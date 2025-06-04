@@ -66,6 +66,26 @@ export default defineContentScript({
       @tailwind components;
       @tailwind utilities;
 
+      /* ポップアップメニュー内のボタンスタイル */
+      :host-context(.popup-menu) .button,
+      :host-context(body) .popup-menu .button {
+        max-width: 200px !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
+      }
+      
+      /* ポップアップメニューのボタンコンテナの横幅を設定 */
+      :host-context(body) .popup-menu .button-container {
+        width: 400px !important;
+        max-width: 400px !important;
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+      }
+      
       /* その他必要なスタイル */
     `;
 

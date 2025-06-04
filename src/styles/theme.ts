@@ -37,12 +37,11 @@ export const theme = {
       normal: 'normal',
       bold: 'bold',
     },
-  },
-  components: {
+  },  components: {
     dialog: {
       padding: '1.5em',
       zIndex: '9999',
-      maxWidth: '500px',
+      maxWidth: '400px', // ポップアップウィンドウの横幅を400pxに設定
     },
     button: {
       primary: {

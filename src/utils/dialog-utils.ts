@@ -56,7 +56,7 @@ export function createDialog(options: CreateDialogOptions): HTMLDialogElement {
     padding: '1.5em',
     zIndex: '9999',
     borderRadius: '8px',
-    maxWidth: '500px',
+    maxWidth: '400px', // ポップアップウィンドウの横幅を400pxに設定
     boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
     border: 'none',
   };
@@ -272,7 +272,7 @@ export function updateResultDialog(
       ${systemPromptPreview ? `<div><strong>内容:</strong> ${systemPromptPreview}</div>` : ''}
       <div><strong>ユーザー入力:</strong> ${selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}</div>
     </div>
-    <div style="white-space:pre-wrap; border-top:1px solid #ddd; padding-top:0.5em; margin-bottom: 1em;">
+    <div style="white-space:pre-wrap; word-break:break-word; border-top:1px solid #ddd; padding-top:0.5em; margin-bottom: 1em; max-width:100%;">
       ${result.replace(/</g, '&lt;')}
     </div>
   `;
