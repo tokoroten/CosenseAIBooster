@@ -1,8 +1,16 @@
 import React from 'react';
 import { useSettingsStore } from '../../store';
+import { StorageService } from '../../hooks/useStorage';
 
 const GeneralTab: React.FC = () => {
-  const { insertPosition, speechLang, setInsertPosition, setSpeechLang } = useSettingsStore();
+  const { 
+    insertPosition, 
+    speechLang, 
+    formatPrompt = '',
+    setInsertPosition, 
+    setSpeechLang,
+    setFormatPrompt 
+  } = useSettingsStore();
   return (
     <div className="p-4 space-y-6 h-full">
       <div>
@@ -32,6 +40,40 @@ const GeneralTab: React.FC = () => {
               ページの最下部に挿入
             </label>
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-medium">出力フォーマット設定</h3>
+        <div className="mt-2">
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="format-prompt" className="block text-sm font-medium text-gray-700">
+              グローバル出力フォーマットプロンプト
+            </label>
+            <button
+              onClick={() => {
+                const defaultFormat = StorageService.getDefaultFormatPrompt();
+                setFormatPrompt(defaultFormat);
+              }}
+              className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded"
+            >
+              初期化
+            </button>
+          </div>
+          <textarea
+            id="format-prompt"
+            value={formatPrompt}
+            onChange={(e) => setFormatPrompt(e.target.value)}
+            placeholder="AIの出力フォーマットを指定するプロンプトを入力。例: マークダウン形式で出力してください。箇条書きで3つのポイントにまとめてください。"
+            rows={4}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+            style={{ minHeight: '100px' }}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            このプロンプトは全てのシステムプロンプトに追加され、AI出力の形式を統一します。
+            例えば「常にマークダウン形式で出力してください」や「出力は箇条書きにし、各項目を3行以内で簡潔にまとめてください」など、
+            出力フォーマットの指定に使用します。個別プロンプトの設定よりも優先されます。
+          </p>
         </div>
       </div>
 

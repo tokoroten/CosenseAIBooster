@@ -4,6 +4,7 @@ export interface Prompt {
   id: string;
   name: string;
   systemPrompt: string;
+  formatPrompt?: string; // 出力フォーマットを規定するプロンプト
   model: string;
   provider?: 'openai' | 'openrouter'; // 個別プロバイダー指定（省略時は全体設定依存）
   insertPosition?: 'below' | 'bottom'; // 個別挿入位置（省略時は全体設定依存）
@@ -13,6 +14,7 @@ export interface Settings {
   prompts: Prompt[];
   insertPosition: 'below' | 'bottom';
   speechLang: string;
+  formatPrompt?: string; // グローバル出力フォーマットを規定するプロンプト
   apiProvider: 'openai' | 'openrouter';
   openaiKey: string;
   openaiModel: string;
@@ -26,12 +28,26 @@ export class StorageService {
     prompts: [],
     insertPosition: 'below',
     speechLang: 'ja-JP',
+    formatPrompt: `
+出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
+箇条書きはタブの個数でネストしてください。ハイフンとスペースで箇条書きをネストしてはいけません。
+重要な語は[] で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。基本は1個か2個です。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
+`,
     apiProvider: 'openai',
     openaiKey: '',
-    openaiModel: 'gpt-3.5-turbo',
+    openaiModel: 'gpt-4o-mini',
     openrouterKey: '',
-    openrouterModel: 'openai/gpt-3.5-turbo',
+    openrouterModel: 'openai/gpt-4o-mini',
   };
+
+  /**
+   * デフォルトのフォーマットプロンプトを取得
+   */
+  public static getDefaultFormatPrompt(): string {
+    return this.defaultSettings.formatPrompt || '';
+  }
 
   /**
    * 設定を初期化
@@ -266,9 +282,10 @@ export class StorageService {
       id: prompt.id || this.generateId(),
       name: prompt.name,
       systemPrompt: prompt.systemPrompt,
+      formatPrompt: prompt.formatPrompt, // フォーマットプロンプトを追加
       model: prompt.model,
-      provider: prompt.provider, // 追加
-      insertPosition: prompt.insertPosition, // 追加
+      provider: prompt.provider,
+      insertPosition: prompt.insertPosition,
     };
     const existingPromptIndex = prompts.findIndex((p) => p.id === prompt.id);
     if (existingPromptIndex >= 0) {

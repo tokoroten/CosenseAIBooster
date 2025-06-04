@@ -10,6 +10,7 @@ interface SettingsState extends Settings {
   addDefaultPrompts: () => void; // デフォルトのプロンプトを追加するメソッド
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
+  setFormatPrompt: (formatPrompt: string) => void; // グローバル出力フォーマットを設定するメソッド
   setApiProvider: (provider: 'openai' | 'openrouter') => void;
   setOpenaiKey: (key: string) => void;
   setOpenaiModel: (model: string) => void;
@@ -42,25 +43,13 @@ const defaultSettings: Settings = {
     {
       id: 'default-llm',
       name: '汎用',
-      systemPrompt: `You are helpful assistant.
-出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
-重要な語は[] で囲ってリンクにする。
-見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
-出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
-`,
+      systemPrompt: `You are helpful assistant.`,
       model: 'gpt-4o-mini',
     },
     {
       id: 'default-summary',
       name: '要約',
-      systemPrompt: `You are a summarization assistant.
-出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
-重要な語は[] で囲ってリンクにする。
-見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
-出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
-`,
+      systemPrompt: `You are a summarization assistant.`,
       model: 'gpt-4o-mini',
     },
     {
@@ -69,7 +58,7 @@ const defaultSettings: Settings = {
       systemPrompt: `あなたには音声認識で得られたテキストを整形する役割があります。以下のルールに従ってください
 1. 不要な空白や改行、フィラーを削除
 2. 文法的に正しい文章に修正
-3. 意味が通じるように整形
+3. 意味が通じるように整形、漢字変換ミスがあれば修正
 4. 句読点を適切に追加
 `,
       model: 'gpt-4o-mini',
@@ -89,32 +78,19 @@ const defaultSettings: Settings = {
     {
       id: 'default-knowledge-jp',
       name: '知識（日本語）',
-      systemPrompt: `あなたは与えられたテキストに基づいて、日本語で知識を提供してください。
-出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
-重要な語は[] で囲ってリンクにする。
-見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
-出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
-`,
+      systemPrompt: `あなたは与えられたテキストに関して、日本語で知識を提供してください。`,
       model: 'gpt-4o-mini',
     },
     {
       id: 'default-factcheck-jp',
       name: 'ファクトチェック',
-      systemPrompt: `あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。
-ファクトには必ず出典となるURLを含めてください。
-
-出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-箇条書きはタブベースでネストする。ハイフンでネストしてはいけません。
-重要な語は[]で囲ってリンクにする。
-見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。
-出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
-`,
+      systemPrompt: `あなたは与えられたテキストに基づいて、日本語でファクトチェックを提供してください。ファクトには必ず出典となるURLを含めてください。`,
       model: 'o3',
     },
   ],
   insertPosition: 'below',
   speechLang: 'ja-JP',
+  formatPrompt: '', // デフォルトは空
   apiProvider: 'openai',
   openaiKey: '',
   openaiModel: 'gpt-3.5-turbo',
@@ -160,9 +136,9 @@ export const useSettingsStore = create<SettingsState>()(
           return {
             prompts: [...state.prompts, ...promptsToAdd],
           };
-        }),
-      setInsertPosition: (insertPosition) => set({ insertPosition }),
+        }),      setInsertPosition: (insertPosition) => set({ insertPosition }),
       setSpeechLang: (speechLang) => set({ speechLang }),
+      setFormatPrompt: (formatPrompt) => set({ formatPrompt }),
       setApiProvider: (apiProvider) => set({ apiProvider }),
       setOpenaiKey: (openaiKey) => {
         console.log(

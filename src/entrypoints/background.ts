@@ -76,12 +76,16 @@ export default defineBackground(() => {
         const openAIClient = new OpenAIClient(apiKey, state.apiProvider);
 
         console.log('[CosenseAIBooster backend] API呼び出しを開始します...');
+
+        // システムプロンプトとグローバルフォーマットプロンプトを結合
+        const systemPromptContent = `${prompt.systemPrompt}\n\n${state.formatPrompt}`;
+
         const result = await openAIClient.createChatCompletion({
           model: model,
           messages: [
             {
               role: 'system',
-              content: prompt.systemPrompt,
+              content: systemPromptContent,
             },
             {
               role: 'user',
