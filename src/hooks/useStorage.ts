@@ -28,13 +28,22 @@ export class StorageService {
     prompts: [],
     insertPosition: 'below',
     speechLang: 'ja-JP',
-    formatPrompt: `出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-- 箇条書きはタブの個数でネストしてください。ハイフンとスペースで箇条書きをネストしてはいけません。
-  - DO NOT USE MARKDOWN BULLETS !!. DO NOT USE HYPHENS AND SPACES FOR BULLETS. USE TABS INSTEAD !!.
-- 重要な語や、センスのいいフレーズは[] で囲ってリンクにする。
-- 見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。基本は1個か2個です。
-- URLはオートリンクされるので、前後にスペースを入れてください。
-- 出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
+    formatPrompt: `出力先はCosense(Scrapbox)であり、Markdownでは出力できません。Scrapbox記法を使ってください。以下に特徴を記述します。
+箇条書きにはスペースを使用します。スペースは1つで1段階のネストを表します。
+箇条書きの冒頭にはハイフンを使用しないでください。 DO NOT USE MARKDOWN BULLETS !!. DO NOT USE HYPHENS AND SPACES FOR BULLETS. USE TABS INSTEAD !!.
+重要な語や、センスのいいフレーズは[] で囲ってリンクにする。
+見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。基本は1個か2個です。構造が複雑な出力の場合は、アスタリスクを増やして階層構造を分かりやすくしてください。
+URLはオートリンクされるので、前後にスペースを入れてください。
+出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
+
+出力例:
+
+[GPT.icon]
+[* 見出し]
+ 重要なポイントは [リンク] にする
+ 箇条書きはタブでネスト
+  ネストはタブで表現
+ URLは自動リンクされるので、前後にスペースを入れる ( example.com )
 `,
     apiProvider: 'openai',
     openaiKey: '',
