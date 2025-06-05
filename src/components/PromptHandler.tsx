@@ -42,12 +42,16 @@ const getSelectedText = (): string => {
 /**
  * プロンプト処理を実行
  */
-export const processPrompt = async (prompt: Prompt): Promise<void> => {
-  const selected = getSelectedText();
+export const processPrompt = async (prompt: Prompt, customInput?: string): Promise<void> => {
+  // カスタム入力があればそれを使用し、なければ選択テキストを使用
+  const selected = customInput || getSelectedText();
+  
+  // 選択テキストが空で、かつカスタム入力もない場合はエラー
   if (!selected) {
-    alert('テキストが選択されていません');
+    alert('テキストが選択されていないか、空のテキストです');
     return;
   }
+  
   // 結果表示用ダイアログを先に作成
   const resultDialog = createResultDialog(prompt.name, selected, prompt.model, prompt.systemPrompt);
 
@@ -253,16 +257,50 @@ const PromptHandlerComponent: React.FC = () => {
             // eslint-disable-next-line no-console
             console.log('カスタムプロンプト入力:', customPromptText);
             
-            const selectedText = getSelectedText();
-            if (selectedText) {
-              // 現在の設定から最新の状態を取得
-              const currentState = useFrontendStore.getState();
+            // カスタムプロンプトが空の場合はエラーメッセージを表示
+            if (!customPromptText?.trim()) {
+              alert('プロンプトが空です。テキストを入力してください。');
+              return;
+            }
+            
+            // 選択テキストを取得してトリム
+            const selectedText = getSelectedText().trim();
+            
+            // 現在の設定から最新の状態を取得
+            const currentState = useFrontendStore.getState();
+            
+            const modelName = currentState.apiProvider === 'openai' 
+              ? currentState.openaiModel 
+              : currentState.openrouterModel;
               
-              const modelName = currentState.apiProvider === 'openai' 
-                ? currentState.openaiModel 
-                : currentState.openrouterModel;
-                
-              // カスタムプロンプトをシステムプロンプトとして使用
+            // 選択範囲が空かどうかを確認
+            if (selectedText === '') {
+              // 選択範囲が空の場合、「You are a helpful assistant」をシステムプロンプトにし、
+              // ユーザー入力をカスタムプロンプトとして扱う
+              // eslint-disable-next-line no-console
+              console.log('選択テキストが空のため、標準アシスタントモードで実行します');
+              
+              const assistantPrompt: Prompt = {
+                id: `assistant-${Date.now()}`,
+                name: '標準アシスタント',
+                systemPrompt: 'You are a helpful assistant',
+                model: modelName,
+                provider: currentState.apiProvider,
+                insertPosition: currentState.insertPosition
+              };
+              
+              // eslint-disable-next-line no-console
+              console.log('標準アシスタントモード実行:', {
+                モデル: modelName,
+                プロバイダー: currentState.apiProvider,
+                挿入位置: currentState.insertPosition,
+                カスタム入力: customPromptText
+              });
+              
+              // カスタムプロンプトテキストをユーザー入力として使用
+              void processPrompt(assistantPrompt, customPromptText);
+            } else {
+              // 選択テキストがある場合は、通常通りカスタムプロンプトをシステムプロンプトとして使用
               const tempPrompt: Prompt = {
                 id: `custom-${Date.now()}`,
                 name: 'カスタムプロンプト',

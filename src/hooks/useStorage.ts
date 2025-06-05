@@ -44,6 +44,16 @@ URLはオートリンクされるので、前後にスペースを入れてく�
  箇条書きはタブでネスト
   ネストはタブで表現
  URLは自動リンクされるので、前後にスペースを入れる ( example.com )
+ 記法例
+  [/ 斜体文字]
+  [** 太字]
+  [* 見出し]
+  \`function() { return true } // inline code \`
+
+code:python
+ # これはPythonのコードブロック
+ def example():
+  return "Hello, World!"
 `,
     apiProvider: 'openai',
     openaiKey: '',

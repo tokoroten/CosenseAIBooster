@@ -41,12 +41,6 @@ interface UIState {
 const defaultSettings: Settings = {
   prompts: [
     {
-      id: 'default-llm',
-      name: '汎用',
-      systemPrompt: `You are helpful assistant.`,
-      model: 'gpt-4o-mini',
-    },
-    {
       id: 'default-summary',
       name: '要約',
       systemPrompt: `You are a summarization assistant.`,
