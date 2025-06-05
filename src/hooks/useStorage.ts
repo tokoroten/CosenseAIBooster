@@ -28,9 +28,10 @@ export class StorageService {
     insertPosition: 'below',
     speechLang: 'ja-JP',
     formatPrompt: `出力先はCosense(Scrapbox)であり、Markdownでは出力できません。以下の記法を使ってください。
-箇条書きはタブの個数でネストしてください。ハイフンとスペースで箇条書きをネストしてはいけません。
+箇条書きはタブの個数でネストしてください。ハイフンとスペースで箇条書きをネストしてはいけません。DO NOT USE MARKDOWN BULLETS!!.
 重要な語は[] で囲ってリンクにする。
 見出しは [* 見出し] という記法を使う。アスタリスクを増やすと、より重要な見出しになります。基本は1個か2個です。
+URLはオートリンクされるので、前後にスペースを入れてください。
 出力は冒頭に [GPT.icon] を入れて改行を行い、AIが出力したものであることを分かりやすくする。
 `,
     apiProvider: 'openai',

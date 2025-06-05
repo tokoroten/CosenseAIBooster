@@ -26,7 +26,7 @@ export default defineBackground(() => {
       try {
         console.log('[CosenseAIBooster backend] プロンプト処理を開始します');
         const state = useSettingsStore.getState();
-        const { promptId, selectedText } = request;
+        const { prompt, selectedText } = request;
 
         if (!selectedText || selectedText.trim() === '') {
           console.warn('[CosenseAIBooster backend] 選択テキストがありません');
@@ -36,13 +36,12 @@ export default defineBackground(() => {
           });
         }
 
-        // プロンプトIDからプロンプト情報を取得
-        const prompt = state.prompts.find((p) => p.id === promptId);
-        if (!prompt) {
-          console.error('[CosenseAIBooster backend] プロンプトが見つかりません ID:', promptId);
+        // プロンプト情報の確認
+        if (!prompt || !prompt.id) {
+          console.error('[CosenseAIBooster backend] プロンプト情報が不正です');
           return Promise.resolve({
             success: false,
-            error: `プロンプトID "${promptId}" が見つかりません`,
+            error: 'プロンプト情報が不正です',
           });
         }
 

@@ -1,5 +1,6 @@
 // フロントエンド用の軽量APIサービス - バックグラウンドとの通信用
 import { browser } from 'wxt/browser';
+import { Prompt } from '../hooks/useStorage';
 
 // プロンプト処理結果の型定義
 export interface PromptProcessResult {
@@ -17,15 +18,15 @@ export class FrontendAPIService {
   /**
    * プロンプト処理リクエストを送信し、結果を取得する
    */
-  static async processPrompt(promptId: string, selectedText: string): Promise<PromptProcessResult> {
+  static async processPrompt(prompt: Prompt, selectedText: string): Promise<PromptProcessResult> {
     try {
       // eslint-disable-next-line no-console
-      console.log(`[CosenseAIBooster] プロンプト処理を開始: ID=${promptId}, テキスト長=${selectedText.length}文字`);
+      console.log(`[CosenseAIBooster] プロンプト処理を開始: ID=${prompt.id}, 名前=${prompt.name}, テキスト長=${selectedText.length}文字`);
 
       // バックグラウンドスクリプトにメッセージを送信
       const response = await browser.runtime.sendMessage({
         type: 'PROCESS_PROMPT',
-        promptId,
+        prompt,
         selectedText,
       });
 

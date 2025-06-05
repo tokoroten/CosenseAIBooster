@@ -59,7 +59,7 @@ export const processPrompt = async (prompt: Prompt): Promise<void> => {
     console.log('[CosenseAIBooster frontend] Prompt ID:', prompt.id);
 
     // フロントエンドサービス経由でバックグラウンドに処理を依頼
-    const response = await FrontendAPIService.processPrompt(prompt.id, selected);
+    const response = await FrontendAPIService.processPrompt(prompt, selected);
 
     // 結果ダイアログの更新
     updateResultDialog(
@@ -253,23 +253,34 @@ const PromptHandlerComponent: React.FC = () => {
             // eslint-disable-next-line no-console
             console.log('カスタムプロンプト入力:', customPromptText);
             
-            // TODO: カスタムプロンプトの処理を実装
-            // 例: フロントエンドサービス経由でバックグラウンドに処理を依頼
-            // 現在は選択されたテキストを取得して、ダイアログ表示するだけ
             const selectedText = getSelectedText();
             if (selectedText) {
-              // 仮の処理: 選択テキストとカスタムプロンプトをアラート表示
-              alert(`選択テキスト: ${selectedText}\nカスタムプロンプト: ${customPromptText}`);
+              // 現在の設定から最新の状態を取得
+              const currentState = useFrontendStore.getState();
               
-              // TODO: 実際の処理（プロンプト実行）を実装
-              // const tempPrompt: Prompt = {
-              //   id: 'custom',
-              //   name: 'カスタムプロンプト',
-              //   userPrompt: customPromptText,
-              //   systemPrompt: '',
-              //   model: 'gpt-3.5-turbo',
-              //   insertPosition: 'below'
-              // };            // void processPrompt(tempPrompt);
+              const modelName = currentState.apiProvider === 'openai' 
+                ? currentState.openaiModel 
+                : currentState.openrouterModel;
+                
+              // カスタムプロンプトをシステムプロンプトとして使用
+              const tempPrompt: Prompt = {
+                id: `custom-${Date.now()}`,
+                name: 'カスタムプロンプト',
+                systemPrompt: customPromptText,
+                model: modelName,
+                provider: currentState.apiProvider,
+                insertPosition: currentState.insertPosition
+              };
+              
+              // eslint-disable-next-line no-console
+              console.log('カスタムプロンプト実行:', {
+                モデル: modelName,
+                プロバイダー: currentState.apiProvider,
+                挿入位置: currentState.insertPosition
+              });
+              
+              // processPrompt関数を呼び出してLLM出力を取得して処理
+              void processPrompt(tempPrompt);
             }
           });
           
