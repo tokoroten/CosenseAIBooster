@@ -9,11 +9,13 @@ const ApiTab: React.FC = () => {
     openaiModel,
     openrouterKey,
     openrouterModel,
+    maxCompletionTokens,
     setApiProvider,
     setOpenaiKey,
     setOpenaiModel,
     setOpenrouterKey,
     setOpenrouterModel,
+    setMaxCompletionTokens,
   } = useSettingsStore();
 
   const [showOpenAIKey, setShowOpenAIKey] = React.useState(false);
@@ -128,8 +130,7 @@ const ApiTab: React.FC = () => {
             <div>
               <label htmlFor="openai-key" className="block text-sm text-gray-700">
                 API キー
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">                <input
+              </label>              <div className="mt-1 relative rounded-md shadow-sm">                <input
                   type={showOpenAIKey ? 'text' : 'password'}
                   id="openai-key"
                   value={openaiKey}
@@ -140,15 +141,27 @@ const ApiTab: React.FC = () => {
                       setOpenaiKey(trimmed);
                     }
                   }}
-                  className="block w-full pr-10 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                  className="block w-full pr-24 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 px-3 flex items-center"
-                  onClick={() => setShowOpenAIKey(!showOpenAIKey)}
-                >
-                  {showOpenAIKey ? '隠す' : '表示'}
-                </button>
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    type="button"
+                    className="px-2 h-full flex items-center text-xs border-l"
+                    onClick={() => setShowOpenAIKey(!showOpenAIKey)}
+                  >
+                    {showOpenAIKey ? '隠す' : '表示'}
+                  </button>
+                  {apiProvider === 'openai' && (
+                    <button
+                      type="button"
+                      className="px-2 h-full flex items-center text-xs text-white bg-blue-500 rounded-r hover:bg-blue-600 disabled:opacity-50"
+                      onClick={verifyApiKey}
+                      disabled={verifying}
+                    >
+                      {verifying ? '検証中...' : '検証'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -180,8 +193,7 @@ const ApiTab: React.FC = () => {
             <div>
               <label htmlFor="openrouter-key" className="block text-sm text-gray-700">
                 API キー
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">                <input
+              </label>              <div className="mt-1 relative rounded-md shadow-sm">                <input
                   type={showOpenRouterKey ? 'text' : 'password'}
                   id="openrouter-key"
                   value={openrouterKey}
@@ -192,15 +204,27 @@ const ApiTab: React.FC = () => {
                       setOpenrouterKey(trimmed);
                     }
                   }}
-                  className="block w-full pr-10 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                  className="block w-full pr-24 rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                 />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 px-3 flex items-center"
-                  onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
-                >
-                  {showOpenRouterKey ? '隠す' : '表示'}
-                </button>
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    type="button"
+                    className="px-2 h-full flex items-center text-xs border-l"
+                    onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
+                  >
+                    {showOpenRouterKey ? '隠す' : '表示'}
+                  </button>
+                  {apiProvider === 'openrouter' && (
+                    <button
+                      type="button"
+                      className="px-2 h-full flex items-center text-xs text-white bg-blue-500 rounded-r hover:bg-blue-600 disabled:opacity-50"
+                      onClick={verifyApiKey}
+                      disabled={verifying}
+                    >
+                      {verifying ? '検証中...' : '検証'}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div>
@@ -220,19 +244,42 @@ const ApiTab: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      <div className="flex items-center gap-2 mt-2">
-        <button
-          type="button"
-          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm disabled:opacity-50"
-          onClick={verifyApiKey}
-          disabled={verifying}
-        >
-          {verifying ? '検証中...' : 'APIキーを検証'}
-        </button>
-        {verifyStatus && <span className="text-sm ml-2">{verifyStatus}</span>}
+      )}      <div className="mt-4">
+        <h3 className="text-lg font-medium">共通設定</h3>
+        <div className="mt-2 space-y-4">
+          <div>
+            <label htmlFor="max-completion-tokens" className="block text-sm text-gray-700">
+              最大トークン数 (max_completion_tokens)
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <input
+                type="number"
+                id="max-completion-tokens"
+                min="100"
+                max="100000"
+                value={maxCompletionTokens}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10);
+                  if (!isNaN(value) && value >= 100) {
+                    setMaxCompletionTokens(value);
+                  }
+                }}
+                className="block w-full rounded-md border-2 border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              生成されるテキストの最大トークン数です。長い応答が必要な場合は増やしてください。
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* 検証ステータスの表示欄 */}
+      {verifyStatus && (
+        <div className="mt-4 p-3 bg-gray-50 border rounded">
+          <span className="text-sm">{verifyStatus}</span>
+        </div>
+      )}
     </div>
   );
 };

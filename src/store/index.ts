@@ -11,11 +11,11 @@ interface SettingsState extends Settings {
   setInsertPosition: (position: 'below' | 'bottom') => void;
   setSpeechLang: (lang: string) => void;
   setFormatPrompt: (formatPrompt: string) => void; // グローバル出力フォーマットを設定するメソッド
-  setApiProvider: (provider: 'openai' | 'openrouter') => void;
-  setOpenaiKey: (key: string) => void;
+  setApiProvider: (provider: 'openai' | 'openrouter') => void;  setOpenaiKey: (key: string) => void;
   setOpenaiModel: (model: string) => void;
   setOpenrouterKey: (key: string) => void;
   setOpenrouterModel: (model: string) => void;
+  setMaxCompletionTokens: (tokens: number) => void;
 }
 
 interface SpeechState {
@@ -91,11 +91,11 @@ const defaultSettings: Settings = {
   insertPosition: 'below',
   speechLang: 'ja-JP',
   formatPrompt: '', // デフォルトは空
-  apiProvider: 'openai',
-  openaiKey: '',
+  apiProvider: 'openai',  openaiKey: '',
   openaiModel: 'gpt-3.5-turbo',
   openrouterKey: '',
   openrouterModel: 'openai/gpt-3.5-turbo',
+  maxCompletionTokens: 5000,
 };
 
 // カスタムChromeストレージの実装をインポート
@@ -156,6 +156,7 @@ export const useSettingsStore = create<SettingsState>()(
         return set({ openrouterKey });
       },
       setOpenrouterModel: (openrouterModel) => set({ openrouterModel }),
+      setMaxCompletionTokens: (maxCompletionTokens) => set({ maxCompletionTokens }),
     }),
     {
       name: 'cosense-ai-settings',

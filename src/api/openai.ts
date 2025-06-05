@@ -76,7 +76,7 @@ export class OpenAIClient implements AIClient {
         model: options.model,
         messages: options.messages,
         ...(isO1Model ? {} : { temperature }),
-        max_completion_tokens: options.max_completion_tokens || 2000,
+        max_completion_tokens: options.max_completion_tokens || 5000,
       };
       
       const response = await this.client.chat.completions.create(apiParams);

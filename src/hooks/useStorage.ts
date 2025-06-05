@@ -19,6 +19,7 @@ export interface Settings {
   openaiModel: string;
   openrouterKey: string;
   openrouterModel: string;
+  maxCompletionTokens: number; // 最大トークン数
 }
 
 export class StorageService {

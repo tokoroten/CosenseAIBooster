@@ -92,7 +92,7 @@ export default defineBackground(() => {
             },
           ],
           temperature: 0.7,
-          max_completion_tokens: 2000,
+          max_completion_tokens: state.maxCompletionTokens,
         });
 
         console.log('[CosenseAIBooster backend] プロンプト処理が完了しました');
@@ -159,7 +159,7 @@ export default defineBackground(() => {
           model: model,
           messages: request.messages,
           temperature: request.temperature || 0.7,
-          max_completion_tokens: request.maxTokens || 2000,
+          max_completion_tokens: request.maxTokens || state.maxCompletionTokens,
         });
 
         // 結果を返送
