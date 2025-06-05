@@ -37,9 +37,16 @@ https://cosen.se/
 - ESLintとPrettier
 - Chrome拡張機能（マニフェストV3）
 - WebSpeech API（音声認識）
+- GitHub Actions（CI/CD、自動リリース）
 
 ## セキュリティ設計
 - APIキーはバックグラウンドスクリプトでのみ取得・使用し、コンテンツスクリプトには公開しない
 - メッセージパッシングによる安全な通信アーキテクチャ
 - Chrome Storage Syncを使用して設定を安全に保存
+
+## CI/CD パイプライン
+- GitHub Actionsを使用した自動ビルドとリリース
+- タグプッシュ（v*形式）をトリガーとした自動化
+- ビルド→パッケージング→GitHub Releasesへの自動公開
+- リリース用ZIPファイルの自動生成とアップロード
 

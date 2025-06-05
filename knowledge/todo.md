@@ -31,6 +31,10 @@
   - [x] 全てのログに "[CosenseAIBooster frontend]" または "[CosenseAIBooster backend]" のプレフィックスを追加
     - [x] 完了：フロントエンド側のファイルには "[CosenseAIBooster frontend]" を、バックエンド側のファイルには "[CosenseAIBooster backend]" を追加
     
+- [x] CIとリリース自動化
+  - [x] GitHub Actions によるビルドと自動リリースのセットアップ
+  - [x] タグプッシュ時に拡張機能をビルド、パッケージ化し、GitHub Releasesに自動公開
+    
 - [x] 新規プロンプト作成時のデフォルト値設定
   - [x] システムプロンプトのデフォルトテキストの確認
   - [x] 確認完了: PromptsTab.tsxの新規作成ボタンクリック時に、すでに「ここにシステムプロンプトを入力してください。\n例：与えられたテキストを要約してください」というデフォルト値が設定されている

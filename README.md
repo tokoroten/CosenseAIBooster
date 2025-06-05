@@ -1,6 +1,8 @@
 # Cosense AI Booster
 
-Cosense（旧Scrapbox）で使えるAIアシスタント Chrome拡張機能です。音声入力やAIプロンプト適用機能を提供します。2025年6月3日現在、安定版として開発中です。
+Cosense（旧Scrapbox）で使えるAIアシスタント Chrome拡張機能です。音声入力とAIプロンプト適用機能を提供します。
+
+本プロジェクトはVive codingのデモンストレーションであり、コードの99%がGithub copilot agent（Claude 3.7 Sonnet）によって生成されています。
 
 ## 機能
 
@@ -141,3 +143,32 @@ MIT
 - [React](https://reactjs.org/)
 - [Zustand](https://github.com/pmndrs/zustand)
 - [TailwindCSS](https://tailwindcss.com/)
+
+## リリースプロセス
+
+本プロジェクトはGitHub Actionsを使用して、自動ビルド・リリースを行います。
+
+1. バージョンを更新するには、`package.json`の`version`フィールドを更新します:
+```json
+{
+  "name": "cosense-ai-booster",
+  "version": "0.2.0", // バージョンを変更
+  ...
+}
+```
+
+2. 変更をコミットしてタグをプッシュします:
+```bash
+git add package.json
+git commit -m "バージョン0.2.0にアップデート"
+git tag v0.2.0
+git push origin main --tags
+```
+
+3. `v`から始まるタグをプッシュすると、GitHub Actionsが自動的に:
+   - 拡張機能をビルド
+   - ZIPファイルにパッケージング
+   - バージョン名でGitHub Releasesに新しいリリースを作成
+   - パッケージをリリースに添付
+
+4. リリース完了後、[Releasesページ](https://github.com/tokoroten/CosenseAIBooster/releases)からZIPファイルをダウンロードできます

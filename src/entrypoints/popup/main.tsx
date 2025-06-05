@@ -83,6 +83,16 @@ const Popup: React.FC = () => {
               Cosense/Scrapboxのページでのみ機能します。
               <br />
               Cosenseのページを開いてください。
+              <br />
+              <a 
+                href="https://github.com/tokoroten/CosenseAIBooster"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-700 underline"
+              >
+                GitHub リポジトリを開く
+              </a>
+
             </p>
           ) : (
             <p className="text-sm text-gray-600 mb-3">ステータスを確認中...</p>
