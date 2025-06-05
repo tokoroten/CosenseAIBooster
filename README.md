@@ -126,7 +126,6 @@ npm run build
 - TypeScript
 - React
 - TailwindCSS
-- Zustand (状態管理)
 - WXT (WebExtension Tools)
 - Vite
 

@@ -3,19 +3,20 @@ import { useSettingsStore } from '../../store';
 import { StorageService } from '../../hooks/useStorage';
 
 const GeneralTab: React.FC = () => {
-  const { 
-    insertPosition, 
-    speechLang, 
+  const {
+    insertPosition,
+    speechLang,
     formatPrompt = '',
-    setInsertPosition, 
+    setInsertPosition,
     setSpeechLang,
-    setFormatPrompt 
+    setFormatPrompt,
   } = useSettingsStore();
   return (
     <div className="p-4 space-y-6 h-full">
+      {' '}
       <div>
         <h3 className="text-lg font-medium">テキスト挿入位置</h3>
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 flex space-x-6">
           <div className="flex items-center">
             <input
               id="insert-below"
@@ -42,7 +43,6 @@ const GeneralTab: React.FC = () => {
           </div>
         </div>
       </div>
-
       <div>
         <div className="mt-2">
           <div className="flex justify-between items-center mb-1">
@@ -73,12 +73,12 @@ const GeneralTab: React.FC = () => {
           </p>
         </div>
       </div>
-
       <div>
         <div className="mt-2">
           <label htmlFor="speech-lang" className="block text-lg font-medium text-gray-700">
             音声認識言語
-          </label>          <select
+          </label>{' '}
+          <select
             id="speech-lang"
             value={speechLang}
             onChange={(e) => setSpeechLang(e.target.value)}

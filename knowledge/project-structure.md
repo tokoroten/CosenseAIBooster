@@ -104,7 +104,7 @@ src/
 │     ├─ 16.png             # 16x16 アイコン
 │     ├─ 32.png             # 32x32 アイコン
 │     └─ 48.png             # 48x48 アイコン
-├─ store/                   # Zustand ストア
+├─ store/                   # ストア
 │  └─ index.ts              # ストア設定と状態管理
 ├─ styles/                  # スタイルシート
 │  └─ index.css             # メインCSS（Tailwind含む）

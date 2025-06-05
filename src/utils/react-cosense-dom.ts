@@ -26,7 +26,7 @@ export class CosenseDOMUtils {
       const textBefore = textInput.value.slice(0, selectionEnd);
       const textAfter = textInput.value.slice(selectionEnd);
       const needsLineBreak = textBefore.length > 0 && !textBefore.endsWith('\n');
-      
+
       textInput.value = textBefore + (needsLineBreak ? '\n' : '') + text + textAfter;
     }
     // 変更を反映させるためにinputイベントを発火
@@ -107,16 +107,15 @@ export function addButtonToPopupMenu(options: {
     const btn = document.createElement('div');
     btn.id = options.id;
     btn.className = 'button' + (options.className ? ' ' + options.className : '');
-    
+
     // 長いプロンプト名は先頭10文字ほど表示して省略記号を付加
-    const displayLabel = options.label.length > 12 
-        ? options.label.substring(0, 10) + '...' 
-        : options.label;
+    const displayLabel =
+      options.label.length > 12 ? options.label.substring(0, 10) + '...' : options.label;
     btn.textContent = displayLabel;
-    
+
     // ツールチップとして完全なラベルを表示
     btn.title = options.label;
-    
+
     // プロンプト名が長い場合のスタイル設定
     btn.style.maxWidth = '200px'; // 最大幅を設定
     btn.style.overflow = 'hidden';
@@ -151,39 +150,135 @@ export function addButtonToPopupMenu(options: {
 }
 
 /**
+ * ポップアップメニューの位置を画面内に収めるために調整する関数
+ * @param popup ポップアップメニュー要素
+ */
+function adjustPopupPosition(popup: HTMLDivElement): void {
+  // 現在の位置情報を取得
+  const rect = popup.getBoundingClientRect();
+
+  // 画面の高さを取得
+  const viewportHeight = window.innerHeight;
+
+  // スクロール位置を取得
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+  // ポップアップが画面上部からはみ出している場合
+  if (rect.top < 0) {
+    // 上部の位置を調整（少し余白を入れて50pxにする）
+    // スクロール位置を考慮して絶対位置を計算
+    popup.style.top = `${scrollTop + 50}px`;
+  }
+
+  // ポップアップが画面下部からはみ出している場合
+  if (rect.bottom > viewportHeight) {
+    // 下部が画面内に収まるように調整（少し余白を入れる）
+    // スクロール位置を考慮して絶対位置を計算
+    popup.style.top = `${scrollTop + viewportHeight - rect.height - 10}px`;
+  }
+}
+
+/**
+ * 選択範囲の変更を監視し、ポップアップメニューの位置を調整するイベントリスナーを設定
+ */
+function setupSelectionChangeListener(): () => void {
+  const adjustPopupOnSelectionChange = () => {
+    const popup = document.querySelector('.popup-menu') as HTMLDivElement | null;
+    if (popup) {
+      adjustPopupPosition(popup);
+    }
+  };
+
+  // selectionchange イベントは頻繁に発生するため、デバウンスする
+  let debounceTimer: number | undefined;
+  const debouncedHandler = () => {
+    if (debounceTimer) {
+      window.clearTimeout(debounceTimer);
+    }
+    debounceTimer = window.setTimeout(() => {
+      adjustPopupOnSelectionChange();
+    }, 50); // 50ms のデバウンス時間
+  };
+
+  // document の selectionchange イベントをリッスン
+  document.addEventListener('selectionchange', debouncedHandler);
+
+  // 別の方法: マウスの動きでも調整する（テキスト選択中のドラッグ操作に対応）
+  document.addEventListener('mousemove', debouncedHandler);
+
+  // クリーンアップ関数を返す
+  return () => {
+    document.removeEventListener('selectionchange', debouncedHandler);
+    document.removeEventListener('mousemove', debouncedHandler);
+    if (debounceTimer) {
+      window.clearTimeout(debounceTimer);
+    }
+  };
+}
+
+/**
  * Cosenseの選択範囲ポップアップメニューの表示を監視し、表示時にコールバックを呼ぶユーティリティ関数
  * @param callback .popup-menuが表示されたときに呼ばれる関数
  * @returns disconnect関数
  */
 export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void): () => void {
   let lastPopup: HTMLDivElement | null = null;
+  let selectionListenerCleanup: (() => void) | null = null;
+
   const observer = new MutationObserver(() => {
     const popup = document.querySelector('.popup-menu') as HTMLDivElement | null;
+
+    // ポップアップがなくなった場合、選択範囲リスナーをクリーンアップする
+    if (!popup && selectionListenerCleanup) {
+      selectionListenerCleanup();
+      selectionListenerCleanup = null;
+      lastPopup = null;
+      return;
+    }
+
+    // 新しいポップアップが表示された場合
     if (popup && popup !== lastPopup) {
       lastPopup = popup;
-      
+
       // button-containerの横幅を設定
       const buttonContainer = popup.querySelector('.button-container') as HTMLDivElement | null;
       if (buttonContainer) {
         // ボタンコンテナの最大幅を400pxに設定
         buttonContainer.style.maxWidth = '400px';
         buttonContainer.style.width = '400px';
-        
+
         // ボタン要素を中央揃えにする
         buttonContainer.style.display = 'flex';
         buttonContainer.style.alignItems = 'center';
         buttonContainer.style.flexWrap = 'wrap';
       }
-      
+
+      // ポップアップメニューの位置を画面内に収める
+      adjustPopupPosition(popup);
+
+      // 選択範囲の変更を監視して位置を調整するリスナーを設定
+      if (selectionListenerCleanup) {
+        selectionListenerCleanup();
+      }
+      selectionListenerCleanup = setupSelectionChangeListener();
+
       // eslint-disable-next-line no-console
       console.log('[CosenseAIBooster frontend] .popup-menu shown:', popup);
       callback(popup);
     }
   });
+
   observer.observe(document.body, { childList: true, subtree: true });
   // eslint-disable-next-line no-console
   console.log('[CosenseAIBooster frontend] onPopupMenuShown observer set');
-  return () => observer.disconnect();
+
+  // MutationObserverとselectionchangeリスナーの両方をクリーンアップする
+  return () => {
+    observer.disconnect();
+    if (selectionListenerCleanup) {
+      selectionListenerCleanup();
+    }
+  };
 }
 
 /**
@@ -191,18 +286,18 @@ export function onPopupMenuShown(callback: (popupMenu: HTMLDivElement) => void):
  * @param onSubmit 入力ボックスでEnterが押された時のコールバック関数
  * @returns 追加に成功したかどうか
  */
-export function addPromptInputToPopupMenu(
-  onSubmit?: (value: string) => void
-): boolean {
+export function addPromptInputToPopupMenu(onSubmit?: (value: string) => void): boolean {
   try {
     // 最新のDOM状態を取得するため、毎回新しく要素を探す
     const buttonContainer = document.querySelector('.popup-menu .button-container');
     if (!buttonContainer) {
       // eslint-disable-next-line no-console
-      console.log('[CosenseAIBooster frontend] addPromptInputToPopupMenu: .button-container not found');
+      console.log(
+        '[CosenseAIBooster frontend] addPromptInputToPopupMenu: .button-container not found'
+      );
       return false;
     }
-    
+
     // プロンプト入力用のテキストボックスが既に存在するか確認
     const existingInput = buttonContainer.querySelector('#cosense-prompt-input');
     if (existingInput) {
@@ -211,7 +306,7 @@ export function addPromptInputToPopupMenu(
       console.log('[CosenseAIBooster frontend] addPromptInputToPopupMenu: input already exists');
       return true;
     }
-    
+
     // 入力ボックスを囲むコンテナ（幅いっぱいに表示するため）
     const inputContainer = document.createElement('div');
     inputContainer.id = 'cosense-prompt-input-container';
@@ -221,7 +316,7 @@ export function addPromptInputToPopupMenu(
     inputContainer.style.borderTop = '1px solid #eee';
     inputContainer.style.position = 'relative'; // 位置関係を明確にする
     inputContainer.style.zIndex = '1000'; // 高いz-indexを設定
-    
+
     // プロンプト入力ボックスを作成
     const promptInputBox = document.createElement('input');
     promptInputBox.id = 'cosense-prompt-input';
@@ -235,7 +330,7 @@ export function addPromptInputToPopupMenu(
     promptInputBox.style.boxSizing = 'border-box';
     promptInputBox.style.position = 'relative'; // 位置関係を明確にする
     promptInputBox.style.zIndex = '1001'; // コンテナよりさらに高いz-indexを設定
-    
+
     // Enter キー押下時の処理
     promptInputBox.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
@@ -244,22 +339,22 @@ export function addPromptInputToPopupMenu(
         if (inputValue) {
           // eslint-disable-next-line no-console
           console.log('[CosenseAIBooster frontend] Custom prompt input:', inputValue);
-          
+
           // コールバック関数が設定されていれば実行
           onSubmit?.(inputValue);
-          
+
           // 入力欄をクリア
           promptInputBox.value = '';
         }
       }
     });
-    
+
     // コンテナに入力ボックスを追加
     inputContainer.appendChild(promptInputBox);
-    
+
     // ボタンコンテナの最後に追加
     buttonContainer.appendChild(inputContainer);
-    
+
     // eslint-disable-next-line no-console
     console.log('[CosenseAIBooster frontend] Custom prompt input added successfully');
     return true;
@@ -286,7 +381,9 @@ export function clearPopupMenuButtons(prefix: string): number {
     const buttons = Array.from(popupMenu.querySelectorAll(`[id^="${prefix}"]`));
 
     // eslint-disable-next-line no-console
-    console.log(`[CosenseAIBooster frontend] Clearing ${buttons.length} buttons with prefix ${prefix}`);
+    console.log(
+      `[CosenseAIBooster frontend] Clearing ${buttons.length} buttons with prefix ${prefix}`
+    );
 
     if (buttons.length === 0) {
       return 0;
@@ -309,7 +406,10 @@ export function clearPopupMenuButtons(prefix: string): number {
     return buttons.length;
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`[CosenseAIBooster frontend] Error clearing buttons with prefix ${prefix}:`, error);
+    console.error(
+      `[CosenseAIBooster frontend] Error clearing buttons with prefix ${prefix}:`,
+      error
+    );
     return 0;
   }
 }
