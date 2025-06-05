@@ -80,8 +80,6 @@ export class SpeechRecognitionService {
           if (this.resultCallback) {
             this.resultCallback(transcript, true);
           }
-          // ★確定時にfinalTranscriptをリセット
-          this.finalTranscript = '';
         } else {
           this.interimTranscript += transcript;
         }
