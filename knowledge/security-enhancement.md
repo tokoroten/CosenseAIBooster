@@ -1,54 +1,105 @@
-# CosenseAIBooster セキュリティ強化
+# CosenseAIBooster セキュリティアーキテクチャ
 
-## APIキーセキュリティ問題
+## API認証情報の保護
 
-### 問題点
-- 従来のコードでは、APIキー（OpenAI, OpenRouter）がZustandストアから直接コンテンツスクリプトでアクセスされていた
-- コンテンツスクリプトはウェブページのコンテキストで実行されるため、APIキーが漏洩するリスクがあった
-- 機密情報がページコンテキストに露出することはセキュリティベストプラクティスに反する
+### セキュリティモデル
+CosenseAIBoosterは、Chrome拡張機能の特性を活かした安全なアーキテクチャを採用しています：
 
-### 解決策の要点
-1. **バックグラウンドスクリプトでのAPIキー管理**
-   - APIキーはバックグラウンドスクリプト内でのみ取得・使用
-   - コンテンツスクリプトからはAPIキーにアクセスできないように変更
+1. **コンテンツスクリプトとバックグラウンドスクリプトの分離**
+   - コンテンツスクリプト：Webページ内で実行（Cosenseとの統合UI）
+   - バックグラウンドスクリプト：独立コンテキストで実行（API通信・機密データ管理）
 
-2. **メッセージパッシングアーキテクチャ**
-   - コンテンツスクリプトは必要な情報（プロバイダー、モデル、プロンプトなど）のみをバックグラウンドスクリプトに送信
-   - バックグラウンドスクリプトがAPIキーを取得し、実際のAPI呼び出しを処理
-   - 結果のみをコンテンツスクリプトに返送
+2. **機密データの隔離**
+   - APIキー（OpenAI, OpenRouter）は常にバックグラウンドスクリプト内でのみアクセス可能
+   - コンテンツスクリプトには、表示用の非機密情報のみを提供
 
-## 実装の変更点
+### 通信アーキテクチャ
 
-### コンテンツスクリプト (content.tsx)
-```typescript
-// 変更前：APIキーを直接取得
-const options = await APIService.getOptionsFromStoreAsync();
-// APIキーの状態をデバッグ表示
-console.log(`プロバイダー: ${options.provider}, キー設定状態: ${options.apiKey ? '設定済み' : '未設定'}`);
-if (!options.apiKey) {
-  throw new Error(`APIキーが設定されていません。設定画面で${options.provider}のAPIキーを設定してください。`);
-}
+1. **メッセージパッシングモデル**
+   - コンテンツスクリプトからバックグラウンドスクリプトへの安全な要求送信
+   ```typescript
+   // コンテンツスクリプトからのリクエスト（APIキーなし）
+   const response = await browser.runtime.sendMessage({
+     type: 'CREATE_CHAT_COMPLETION',
+     request: {
+       provider: 'openai',
+       model: 'gpt-4',
+       messages: [...]
+     }
+   });
+   ```
+   
+   - バックグラウンドスクリプトでの認証情報の安全な取得と使用
+   ```typescript
+   // バックグラウンドスクリプト内でのAPIキー取得と使用
+   const settings = await chrome.storage.local.get(['openaiKey']);
+   const client = new OpenAIClient(settings.openaiKey, 'openai');
+   ```
+   
+   - 処理結果のみをコンテンツスクリプトに返送
+   ```typescript
+   // センシティブ情報を含まない応答のみを返す
+   return { content: completion.content };
+   ```
 
-// 変更後：プロバイダーとモデルのみを扱う
-const state = useSettingsStore.getState();
-const provider = prompt.provider || state.apiProvider;
-const model = prompt.model || (provider === 'openai' ? state.openaiModel : state.openrouterModel);
-// セキュアなAPIリクエスト実行
-const options = {
-  provider: provider as 'openai' | 'openrouter',
-  apiKey: '', // APIキーはバックグラウンドスクリプトで管理するため空にする
-  model: model,
-};
-```
+2. **権限の最小化**
+   - 必要な最小限の権限のみをマニフェストで宣言
+   - 機密操作はバックグラウンドコンテキストに制限
 
-### APIサービス (service.ts)
-バックグラウンドスクリプトへのメッセージ送信を処理:
+## ストレージセキュリティ
 
-```typescript
-// バックグラウンドスクリプトにメッセージを送信
-const browser = (globalThis as any).browser || (globalThis as any).chrome;
-const response = await browser.runtime.sendMessage({
-  type: 'CREATE_CHAT_COMPLETION',
+### Chrome Storage APIの安全な使用
+
+1. **データの永続化**
+   - Chrome Storage APIを使用したデータの安全な永続化
+   - センシティブデータ（APIキー）はlocalストレージのみに保存
+   - フロントエンドには表示用の安全なデータのみを提供
+
+2. **統一ストレージアクセス**
+   ```typescript
+   // chromeStorage.ts - カスタムストレージアダプター
+   export const chromeStorageApi = {
+     getItem: async (name: string): Promise<string | null> => {
+       try {
+         const result = await chrome.storage.local.get(name);
+         return result[name] || null;
+       } catch (error) {
+         console.error(`[CosenseAIBooster] Storage get error:`, error);
+         return null;
+       }
+     },
+     setItem: async (name: string, value: string): Promise<void> => {
+       try {
+         await chrome.storage.local.set({ [name]: value });
+       } catch (error) {
+         console.error(`[CosenseAIBooster] Storage set error:`, error);
+       }
+     },
+     removeItem: async (name: string): Promise<void> => {
+       try {
+         await chrome.storage.local.remove(name);
+       } catch (error) {
+         console.error(`[CosenseAIBooster] Storage remove error:`, error);
+       }
+     }
+   };
+   ```
+
+## エラーハンドリングとセキュリティロギング
+
+1. **一貫したエラーハンドリング**
+   ```typescript
+   // error-handling.ts
+   export const handleError = (error: unknown, context: string): void => {
+     const errorMessage = error instanceof Error ? error.message : String(error);
+     console.error(`[CosenseAIBooster ${context}] Error:`, errorMessage);
+     // セキュリティ上の理由でスタックトレースは本番環境では表示しない
+   };
+   ```
+
+2. **識別可能なロギングプレフィックス**
+   - フロントエンド: `[CosenseAIBooster frontend]`
+   - バックエンド: `[CosenseAIBooster backend]`
   provider: options.provider,
   model: options.model,
   messages,

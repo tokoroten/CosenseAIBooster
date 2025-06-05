@@ -130,7 +130,9 @@ const ApiTab: React.FC = () => {
             <div>
               <label htmlFor="openai-key" className="block text-sm text-gray-700">
                 API キー
-              </label>              <div className="mt-1 relative rounded-md shadow-sm">                <input
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <input
                   type={showOpenAIKey ? 'text' : 'password'}
                   id="openai-key"
                   value={openaiKey}
@@ -163,11 +165,20 @@ const ApiTab: React.FC = () => {
                   )}
                 </div>
               </div>
+              {/* APIキー検証結果をここに表示 */}
+              {verifyStatus && apiProvider === 'openai' && (
+                <div className="mt-1">
+                  <span className={`text-sm ${verifyStatus.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
+                    {verifyStatus}
+                  </span>
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="openai-model" className="block text-sm text-gray-700">
                 モデル
-              </label>              <select
+              </label>
+              <select
                 id="openai-model"
                 value={openaiModel}
                 onChange={(e) => setOpenaiModel(e.target.value)}
@@ -193,7 +204,9 @@ const ApiTab: React.FC = () => {
             <div>
               <label htmlFor="openrouter-key" className="block text-sm text-gray-700">
                 API キー
-              </label>              <div className="mt-1 relative rounded-md shadow-sm">                <input
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <input
                   type={showOpenRouterKey ? 'text' : 'password'}
                   id="openrouter-key"
                   value={openrouterKey}
@@ -226,11 +239,20 @@ const ApiTab: React.FC = () => {
                   )}
                 </div>
               </div>
+              {/* APIキー検証結果をここに表示 */}
+              {verifyStatus && apiProvider === 'openrouter' && (
+                <div className="mt-1">
+                  <span className={`text-sm ${verifyStatus.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
+                    {verifyStatus}
+                  </span>
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="openrouter-model" className="block text-sm text-gray-700">
                 モデル
-              </label>              <select
+              </label>
+              <select
                 id="openrouter-model"
                 value={openrouterModel}
                 onChange={(e) => setOpenrouterModel(e.target.value)}
@@ -244,7 +266,8 @@ const ApiTab: React.FC = () => {
             </div>
           </div>
         </div>
-      )}      <div className="mt-4">
+      )}
+      <div className="mt-4">
         <h3 className="text-lg font-medium">共通設定</h3>
         <div className="mt-2 space-y-4">
           <div>
@@ -273,13 +296,6 @@ const ApiTab: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* 検証ステータスの表示欄 */}
-      {verifyStatus && (
-        <div className="mt-4 p-3 bg-gray-50 border rounded">
-          <span className="text-sm">{verifyStatus}</span>
-        </div>
-      )}
     </div>
   );
 };
